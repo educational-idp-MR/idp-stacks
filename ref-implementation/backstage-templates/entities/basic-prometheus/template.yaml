@@ -1,0 +1,42 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  description: Creates a Github Codespaces powered application with Prometheus and grafana
+  name: basic-prometheus-codespaces
+  title: Create a Github Codespaces powered application with Prometheus and Grafana
+spec:
+  owner: guests
+  type: service
+  parameters:
+    - title: Configuration Options
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: name of this application
+        
+  steps:
+    - id: template
+      name: Generating component
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{parameters.name}}
+
+    - id: publish
+      name: Publishing to a gitea git repository
+      action: publish:gitea
+      input:
+        description: This is an example app
+        # Hard coded value for this demo purposes only.
+        repoUrl: cnoe.localtest.me:8443/gitea?repo=${{parameters.name}}
+        defaultBranch: main
+
+  output:
+    links:
+      - title: Open in gitea!
+        icon: github
+        url: https://cnoe.localtest.me:8443/gitea/giteaAdmin/${{parameters.name}}
+      

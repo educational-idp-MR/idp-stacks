@@ -1,0 +1,18 @@
+{
+  "name": "My Space",
+  // The dockerfile will be at te root of the project
+  "build": {"dockerfile": "../Dockerfile"},
+  "mounts": [
+    { "source": "/var/run/docker.sock", "target": "/var/run/docker.sock", "type": "bind" }
+  ],
+  // Your code path from the .devcontainer directory
+  "workspaceFolder": "/workspaces/${{ values.name }}",
+  // List of ports that you want to preview
+  "forwardPorts": [81, 3000, 9091],
+  // Automatically start the app in subsequent sessions
+  //"postStartCommand": "chmod u+x setup.sh & ./setup.sh",
+  // Privileged flag is needed to run docker-in-docker, the volume
+  // is needed or docker build will fail
+  "runArgs": [ "--platform=linux/amd64","--add-host=host.docker.internal:host-gateway","--privileged"],
+  "postCreateCommand": "chmod u+x setup.sh & ./setup.sh"
+}

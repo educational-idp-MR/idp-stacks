@@ -1,0 +1,132 @@
+name: Build and Push to ECR
+
+on:
+  push:
+    tags:
+      - 'release-[0-9]+.[0-9]+.[0-9]+'
+
+env:
+  # Región de AWS. Configúrala como un Secret en el repo/org
+  AWS_REGION: "us-east-2"
+  # Nombre del repositorio en ECR = nombre del repo de GitHub
+  REPOSITORY: "test-create-ecr"
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker to ECR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4.3.1
+        with:
+          # aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          # aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          # aws-region: ${{ env.AWS_REGION }}
+          # Si prefieres usar OIDC/assume-role, comenta las 2 líneas de access keys y agrega:
+          role-to-assume: "arn:aws:iam::116981771521:role/github-actions-access-ecr"
+          role-session-name: gha-ecr-session
+
+      - name: Resolve AWS account and registry
+        id: aws
+        env:
+          AWS_REGION: ${{ env.AWS_REGION }}
+        run: |
+          set -euo pipefail
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          echo "account_id=$ACCOUNT_ID" >> "$GITHUB_OUTPUT"
+          echo "registry=$ACCOUNT_ID.dkr.ecr.${AWS_REGION}.amazonaws.com" >> "$GITHUB_OUTPUT"
+
+      - name: Login to Amazon ECR
+        env:
+          AWS_REGION: ${{ env.AWS_REGION }}
+          REGISTRY: ${{ steps.aws.outputs.registry }}
+        run: |
+          set -euo pipefail
+          aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$REGISTRY"
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          set -euo pipefail
+          REF_NAME="${GITHUB_REF_NAME:-}"
+          if [ -z "$REF_NAME" ]; then
+            echo "GITHUB_REF_NAME is empty" >&2
+            exit 1
+          fi
+          VERSION="$(printf '%s' "$REF_NAME" | sed -E 's/[^0-9.]+//g')"
+          if [ -z "$VERSION" ]; then
+            echo "Could not extract numeric version from tag: $REF_NAME" >&2
+            exit 1
+          fi
+          echo "Extracted version: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure ECR repository exists
+        env:
+          REPOSITORY: ${{ env.REPOSITORY }}
+        run: |
+          set -euo pipefail
+          if aws ecr describe-repositories --repository-names "$REPOSITORY" >/dev/null 2>&1; then
+            echo "ECR repository $REPOSITORY exists."
+          else
+            echo "Creating ECR repository $REPOSITORY ..."
+            aws ecr create-repository --repository-name "$REPOSITORY" >/dev/null
+          fi
+
+      - name: Build Docker image
+        env:
+          REGISTRY: ${{ steps.aws.outputs.registry }}
+          REPOSITORY: ${{ env.REPOSITORY }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          IMAGE_URI="$REGISTRY/$REPOSITORY"
+          echo "Building $IMAGE_URI ..."
+          docker build -t "$IMAGE_URI:latest" -t "$IMAGE_URI:${GITHUB_SHA}" -t "$IMAGE_URI:${VERSION}" .
+
+      - name: Push Docker image
+        env:
+          REGISTRY: ${{ steps.aws.outputs.registry }}
+          REPOSITORY: ${{ env.REPOSITORY }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          IMAGE_URI="$REGISTRY/$REPOSITORY"
+          echo "Pushing $IMAGE_URI ..."
+          docker push "$IMAGE_URI:latest"
+          docker push "$IMAGE_URI:${GITHUB_SHA}"
+          docker push "$IMAGE_URI:${VERSION}"
+
+      - name: Update deployment image and push to default branch
+        env:
+          REGISTRY: ${{ steps.aws.outputs.registry }}
+          REPOSITORY: ${{ env.REPOSITORY }}
+          VERSION: ${{ steps.version.outputs.version }}
+          TARGET_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          IMAGE_URI="$REGISTRY/$REPOSITORY:$VERSION"
+          FILE="python-app/deployment.yaml"
+          echo "Updating $FILE image to $IMAGE_URI"
+          # Replace the image line in the deployment manifest
+          sed -i -E "s|^([[:space:]]*image:[[:space:]]*).*$|\1${IMAGE_URI}|" "$FILE"
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git checkout "$TARGET_BRANCH"
+          git add "$FILE"
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: update deployment image to ${IMAGE_URI}"
+            git push origin "$TARGET_BRANCH"
+          fi
+

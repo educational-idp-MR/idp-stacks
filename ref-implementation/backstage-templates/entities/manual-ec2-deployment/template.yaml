@@ -1,0 +1,224 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  description: Crea una aplicación Spring Boot y una instancia EC2 para despliegue manual usando Terraform Hola Mundo :) 
+  name: manual-ec2-deployment
+  title: Despliegue Manual en EC2 (GitOps)
+spec:
+  owner: guests
+  type: service
+  parameters:
+    - title: Información básica
+      required:
+        - name
+      properties:
+        name:
+          title: Nombre de la Aplicación
+          type: string
+          description: Nombre único para identificar la aplicación
+          ui:autofocus: true
+        description:
+          title: Descripción
+          type: string
+          description: Descripción breve de la aplicación
+          default: Una aplicación Spring Boot desplegada manualmente en EC2
+
+    - title: Choose a location
+      description: |
+        This section will ask for details about the Owner and Repository name which will then be used 
+        to create a repository in that location using your GitHub credentials.
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Enter an Owner and Repository Name
+          description: |
+            The Owner should be your GitHub username. The Repository name should be a name that is not one that exists already in your GitHub account.
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            requestUserCredentials:
+              secretsKey: USER_OAUTH_TOKEN
+              additionalScopes:
+                github:
+                  - workflow
+            allowedHosts:
+              - github.com
+
+    - title: Configuración de AWS
+      required:
+        - awsRegion
+        - ec2InstanceType
+        - awsAccessKey
+        - awsSecretKey
+      properties:
+        awsRegion:
+          title: Región de AWS
+          type: string
+          description: Región donde se desplegará la instancia EC2
+          default: us-east-1
+          enum:
+            - us-east-1
+            - us-east-2
+            - us-west-1
+            - us-west-2
+            - eu-west-1
+            - eu-central-1
+            - sa-east-1
+        awsAccessKey:
+          title: AWS Access Key
+          type: string
+          description: Access Key ID para acceder a AWS
+          ui:field: TextField
+          ui:options:
+            mask: true
+        awsSecretKey:
+          title: AWS Secret Key
+          type: string
+          description: Secret Access Key para acceder a AWS
+          ui:widget: password
+        ec2InstanceType:
+          title: Tipo de instancia EC2
+          type: string
+          description: Tipo de instancia EC2 a crear
+          default: t2.micro
+          enum:
+            - t2.nano
+            - t2.micro
+            - t2.small
+            - t2.medium
+        keyPairName:
+          title: Nombre del Key Pair
+          type: string
+          description: Nombre del key pair existente en AWS (debe existir previamente)
+        allowedIpRange:
+          title: Rango de IP permitido
+          type: string
+          description: Rango de IPs permitidas para conexión SSH/SFTP (formato CIDR)
+          default: 0.0.0.0/0
+
+  steps:
+    - id: template
+      name: Generando aplicación Spring Boot
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{parameters.name}}
+          description: ${{parameters.description}}
+          awsRegion: ${{parameters.awsRegion}}
+          ec2InstanceType: ${{parameters.ec2InstanceType}}
+          keyPairName: ${{parameters.keyPairName}}
+          allowedIpRange: ${{parameters.allowedIpRange}}
+          # Extraer la información del repositorio del RepoUrlPicker
+          githubOrg: ${{parameters.repoUrl | parseRepoUrl.owner}}
+          githubRepoName: ${{parameters.repoUrl | parseRepoUrl.repo}}
+
+    - id: publish
+      name: Publicando en GitHub
+      action: publish:github
+      input:
+        description: ${{parameters.description}}
+        repoUrl: ${{parameters.repoUrl}}
+        defaultBranch: main
+        gitCommitMessage: "Creación inicial de la aplicación Spring Boot para despliegue manual"
+        token: ${GITHUB_TOKEN}
+
+    - id: create-git-source
+      name: Crear GitRepository en Flux
+      action: kubernetes:apply
+      input:
+        manifest: |
+          apiVersion: source.toolkit.fluxcd.io/v1
+          kind: GitRepository
+          metadata:
+            name: ${{parameters.name}}
+            namespace: flux-system
+          spec:
+            interval: 30s
+            url: https://github.com/${{parameters.repoUrl | parseRepoUrl.owner}}/${{parameters.repoUrl | parseRepoUrl.repo}}
+            ref:
+              branch: main
+
+    - id: create-aws-credentials-secret
+      name: Crear Secret con credenciales AWS
+      action: kubernetes:apply
+      input:
+        manifest: |
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: ${{parameters.name}}-aws-credentials
+            namespace: flux-system
+          type: Opaque
+          stringData:
+            AWS_ACCESS_KEY_ID: ${{parameters.awsAccessKey}}
+            AWS_SECRET_ACCESS_KEY: ${{parameters.awsSecretKey}}
+            AWS_REGION: ${{parameters.awsRegion}}
+
+    - id: create-terraform-resource
+      name: Crear recurso Terraform en Flux
+      action: kubernetes:apply
+      input:
+        manifest: |
+          apiVersion: infra.contrib.fluxcd.io/v1alpha2
+          kind: Terraform
+          metadata:
+            name: ${{parameters.name}}-ec2
+            namespace: flux-system
+          spec:
+            interval: 1m
+            approvePlan: auto
+            path: ./infrastructure/terraform
+            sourceRef:
+              kind: GitRepository
+              name: ${{parameters.name}}
+              namespace: flux-system
+            writeOutputsToSecret:
+              name: ${{parameters.name}}-ec2-outputs
+            runnerPodTemplate:
+              spec:
+                env:
+                  - name: TF_VAR_aws_region
+                    value: ${{parameters.awsRegion}}
+                envFrom:
+                  - secretRef:
+                      name: ${{parameters.name}}-aws-credentials
+            vars:
+              - name: app_name
+                value: ${{parameters.name}}
+              - name: instance_type
+                value: ${{parameters.ec2InstanceType}}
+              - name: key_pair_name
+                value: ${{parameters.keyPairName}}
+              - name: allowed_ip_range
+                value: ${{parameters.allowedIpRange}}
+
+    - id: get-ec2-outputs
+      name: Obteniendo información de la instancia EC2
+      action: kubernetes:fetch
+      input:
+        namespace: flux-system
+        kind: Secret
+        name: ${{parameters.name}}-ec2-outputs
+        apiVersion: v1
+      timeout: 600
+
+    - id: register
+      name: Registrando en el catálogo
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: 'catalog-info.yaml'
+
+  output:
+    links:
+      - title: Repositorio GitHub
+        url: ${{ steps['publish'].output.remoteUrl }}
+      - title: Información de la instancia EC2
+        url: https://${{parameters.awsRegion}}.console.aws.amazon.com/ec2/home?region=${{parameters.awsRegion}}#Instances:search=${{parameters.name}}
+      - title: Guía de despliegue manual
+        url: ${{ steps['publish'].output.remoteUrl }}/blob/main/deployment-guide.md
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}

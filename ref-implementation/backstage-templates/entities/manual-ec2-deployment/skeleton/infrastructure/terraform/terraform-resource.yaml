@@ -1,0 +1,29 @@
+apiVersion: infra.contrib.fluxcd.io/v1alpha2
+kind: Terraform
+metadata:
+  name: ${values.name}-ec2
+  namespace: flux-system
+spec:
+  interval: 1m
+  approvePlan: auto
+  path: ./infrastructure/terraform
+  sourceRef:
+    kind: GitRepository
+    name: ${values.name}
+    namespace: flux-system
+  writeOutputsToSecret:
+    name: ${values.name}-ec2-outputs
+  runnerPodTemplate:
+    spec:
+      serviceAccountName: tf-runner
+  vars:
+    - name: aws_region
+      value: ${values.awsRegion}
+    - name: app_name
+      value: ${values.name}
+    - name: instance_type
+      value: ${values.ec2InstanceType}
+    - name: key_pair_name
+      value: ${values.keyPairName}
+    - name: allowed_ip_range
+      value: ${values.allowedIpRange}
