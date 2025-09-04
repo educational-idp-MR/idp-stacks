@@ -39,7 +39,7 @@ spec:
       action: cnoe:create-argocd-app
       input:
         appName: ${{parameters.name}}
-        appNamespace: ${{parameters.name}}
+        appNamespace: monitoring
         argoInstance: in-cluster
         projectName: default
         # necessary until we generate our own cert
