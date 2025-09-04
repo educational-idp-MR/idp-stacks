@@ -11,6 +11,7 @@ spec:
     - ./ray-serve/template-ray-serve.yaml
     - ./basic-prometheus/template.yaml
     - ./kubernetes-prometheus-grafana/template.yaml
+    - ./flask-app-with-prometheus/template.yaml
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Location

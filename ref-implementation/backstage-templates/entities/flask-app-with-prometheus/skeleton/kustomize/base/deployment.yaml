@@ -1,9 +1,15 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${{values.name}}-monitoring
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ${{values.name}}-monitoring
   labels:
     app: ${{values.name}}-monitoring
+  namespace: ${{values.name}}-monitoring
 spec:
   replicas: 1
   selector:
@@ -13,11 +19,15 @@ spec:
     metadata:
       labels:
         app: ${{values.name}}-monitoring
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5000"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: ${{values.name}}-monitoring
-        image: ChangeMe #TODO: Change this to your image
-        imagePullPolicy: IfNotPresent
+        image: andresmarcelo7/prometheus_python:latest #TODO: Change this to your image
+        imagePullPolicy: Always
         ports:
         - containerPort: 5000
 ---
@@ -27,6 +37,7 @@ metadata:
   name: ${{values.name}}-monitoring
   labels:
     app: ${{values.name}}-monitoring
+  namespace: ${{values.name}}-monitoring
 spec:
   selector:
     app: ${{values.name}}-monitoring
