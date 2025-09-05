@@ -21,8 +21,6 @@ spec:
         app: ${{values.name}}-monitoring
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/port: "5000"
-        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: ${{values.name}}-monitoring
@@ -46,3 +44,24 @@ spec:
     targetPort: 5000
     name: http
   type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ${{values.name}}-monitoring-ingress
+  namespace: ${{values.name}}-monitoring
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: ${{values.name}}.cnoe.localtest.me
+      http:
+        paths:
+          - path: /.*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: ${{values.name}}-monitoring
+                port:
+                  number: 80
