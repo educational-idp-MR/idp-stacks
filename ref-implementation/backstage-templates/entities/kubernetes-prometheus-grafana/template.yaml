@@ -1,9 +1,9 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  description: Creates a Kubernetes powered application with Prometheus and grafana
-  name: kubernetes-prometheus-grafana
-  title: Prometheus and Grafana 4!
+  description: Base Observability Stack (Prometheus + Loki + Grafana)
+  name: observability-stack
+  title: Observability Stack
 spec:
   owner: guests
   type: service
@@ -14,7 +14,7 @@ spec:
       properties:
         name:
           type: string
-          description: name of this application
+          description: name for the observability stack
         
   steps:
     - id: template

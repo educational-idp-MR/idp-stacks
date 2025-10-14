@@ -5,11 +5,11 @@ metadata:
   description: A collection of example templates
 spec:
   targets:
-    - ./basic/template.yaml
-    - ./argo-workflows/template.yaml
-    - ./app-with-bucket/template.yaml
-    - ./ray-serve/template-ray-serve.yaml
-    - ./basic-prometheus/template.yaml
+    #- ./basic/template.yaml
+    #- ./argo-workflows/template.yaml
+    #- ./app-with-bucket/template.yaml
+    #- ./ray-serve/template-ray-serve.yaml
+    #- ./basic-prometheus/template.yaml
     - ./kubernetes-prometheus-grafana/template.yaml
     - ./flask-app-with-prometheus/template.yaml
 ---

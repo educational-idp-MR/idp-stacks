@@ -1,9 +1,9 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  description: Creates a python + flask app with prometheus-ready endpoint
+  description: Creates a python + flask app with prometheus-ready metrics and logs 
   name: flask-app-with-prometheus
-  title: Flask App with Prometheus
+  title: Python Flask API with basic metrics and logs
 spec:
   owner: guests
   type: service
@@ -14,7 +14,18 @@ spec:
       properties:
         name:
           type: string
-          description: name of this application
+          description: name of this application (eg. [YOUR-NAME]-app)
+    - title: Select Parent Stack
+      properties:
+        parentSystem:
+          title: Parent System
+          type: string
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: system
+              spec.stackType: observability-stack
+            allowArbitraryValues: false
         
   steps:
     - id: template
@@ -24,6 +35,7 @@ spec:
         url: ./skeleton
         values:
           name: ${{parameters.name}}
+          parentSystem: ${{parameters.parentSystem}}
 
     - id: publish
       name: Publishing to a gitea git repository
