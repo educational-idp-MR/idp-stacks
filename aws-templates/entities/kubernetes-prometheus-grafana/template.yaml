@@ -30,11 +30,8 @@ spec:
           type: string
           ui:field: RepoUrlPicker
           ui:options:
-            requestUserCredentials:
-              secretsKey: USER_OAUTH_TOKEN
-              additionalScopes:
-                github:
-                  - workflow
+            allowedOrganizations:
+              - educational-idp-MR
             allowedHosts:
               - github.com
         
