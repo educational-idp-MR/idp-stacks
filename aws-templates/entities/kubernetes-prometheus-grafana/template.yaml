@@ -30,11 +30,8 @@ spec:
           type: string
           ui:field: RepoUrlPicker
           ui:options:
-            requestUserCredentials:
-              secretsKey: USER_OAUTH_TOKEN
-              additionalScopes:
-                github:
-                  - workflow
+            allowedOrganizations:
+              - educational-idp-MR
             allowedHosts:
               - github.com
         
@@ -57,7 +54,7 @@ spec:
         repoUrl: ${{parameters.repoUrl}}
         defaultBranch: main
         gitCommitMessage: "Observability Stack: Grafana - Prometheus - Loki"
-        token: ${GITHUB_TOKEN}
+        repoVisibility: public
 
     - id: create-argocd-app
       name: Create ArgoCD App
