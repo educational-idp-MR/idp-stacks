@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ${{values.name}}-monitoring
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ${{values.name}}-monitoring
+  labels:
+    app: ${{values.name}}-monitoring
+  namespace: ${{values.name}}-monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ${{values.name}}-monitoring
+  template:
+    metadata:
+      labels:
+        app: ${{values.name}}-monitoring
+      annotations:
+        prometheus.io/scrape: "true"
+    spec:
+      containers:
+      - name: ${{values.name}}-monitoring
+        image: andresmarcelo7/prometheus_python:latest #TODO: Change this to your image
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ${{values.name}}-monitoring
+  labels:
+    app: ${{values.name}}-monitoring
+  namespace: ${{values.name}}-monitoring
+spec:
+  selector:
+    app: ${{values.name}}-monitoring
+  ports:
+  - port: 80
+    targetPort: 5000
+    name: http
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ${{values.name}}-monitoring-ingress
+  namespace: ${{values.name}}-monitoring
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: ${{values.name}}.cnoe.localtest.me
+      http:
+        paths:
+          - path: /.*
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: ${{values.name}}-monitoring
+                port:
+                  number: 80

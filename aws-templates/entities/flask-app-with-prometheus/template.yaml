@@ -1,0 +1,73 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  description: Creates a python + flask app with prometheus-ready metrics and logs 
+  name: flask-app-with-prometheus
+  title: Python Flask API with basic metrics and logs
+spec:
+  owner: guests
+  type: service
+  parameters:
+    - title: Configuration Options
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: name of this application (eg. [YOUR-NAME]-app)
+    - title: Select Parent Stack
+      properties:
+        parentSystem:
+          title: Parent System
+          type: string
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: system
+              spec.stackType: observability-stack
+            allowArbitraryValues: false
+        
+  steps:
+    - id: template
+      name: Generating component
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{parameters.name}}
+          parentSystem: ${{parameters.parentSystem}}
+
+    - id: publish
+      name: Publishing to a gitea git repository
+      action: publish:gitea
+      input:
+        description: This is an example app
+        # Hard coded value for this demo purposes only.
+        repoUrl: cnoe.localtest.me:8443/gitea?repo=${{parameters.name}}
+        defaultBranch: main
+
+    - id: create-argocd-app
+      name: Create ArgoCD App
+      action: cnoe:create-argocd-app
+      input:
+        appName: ${{parameters.name}}
+        appNamespace: ${{parameters.name}}
+        argoInstance: in-cluster
+        projectName: default
+        # necessary until we generate our own cert
+        repoUrl: https://cnoe.localtest.me:8443/gitea/giteaAdmin/${{parameters.name}}
+        path: "kustomize/base"
+    - id: register
+      name: Register
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: 'catalog-info.yaml'
+    
+
+  output:
+    links:
+      - title: Open in gitea!
+        icon: github
+        url: https://cnoe.localtest.me:8443/gitea/giteaAdmin/${{parameters.name}}
+      
