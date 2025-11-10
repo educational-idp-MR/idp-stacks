@@ -7,12 +7,12 @@ spec:
   targets:
     - ./kubernetes-prometheus-grafana/template.yaml
     - ./flask-app-with-prometheus/template.yaml
----
-apiVersion: backstage.io/v1alpha1
-kind: Location
-metadata:
-  name: basic-organization
-  description: Basic organization data
-spec:
-  targets:
-    - ./organization/guests.yaml
+# ---
+# apiVersion: backstage.io/v1alpha1
+# kind: Location
+# metadata:
+#   name: basic-organization
+#   description: Basic organization data
+# spec:
+#   targets:
+#     - ./organization/guests.yaml
