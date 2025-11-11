@@ -8,13 +8,13 @@ spec:
   owner: guests
   type: service
   parameters:
-    - title: Configuration Options
+    - title: Configuration Options!
       required:
         - name
       properties:
         name:
           type: string
-          description: name of this application (eg. [YOUR-NAME]-app)
+          description: name of this application! (eg. [YOUR-NAME]-app)
         domain:
           type: string
           description: Base domain for the platform
@@ -61,6 +61,7 @@ spec:
         values:
           name: ${{parameters.name}}
           parentSystem: ${{parameters.parentSystem}}
+          cleanParentSystem: ${{parameters.parentSystem | split('/') | last}}
           githubOrg: ${{parameters.repoUrl | parseRepoUrl.owner}}
           githubRepoName: ${{parameters.repoUrl | parseRepoUrl.repo}}
           domain: ${{parameters.domain}}

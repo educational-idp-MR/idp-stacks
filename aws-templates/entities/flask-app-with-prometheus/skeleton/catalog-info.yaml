@@ -13,7 +13,7 @@ metadata:
     - url: https://github.com/${{values.githubOrg}}/${{values.githubRepoName}}
       title: Repo URL
       icon: github
-    - url: https://${{values.name}}.${{values.parentSystem}}.${{values.domain}}
+    - url: https://${{values.name}}.${{values.cleanParentSystem}}.${{values.domain}}
       title: Url Shortener App 
       icon: externalLink
 spec:
