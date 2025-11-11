@@ -8,7 +8,7 @@ spec:
   owner: guests
   type: service
   parameters:
-    - title: Configuration Options!
+    - title: Configuration Options!!
       required:
         - name
       properties:
@@ -53,6 +53,14 @@ spec:
               - github.com
         
   steps:
+    - id: extract-parent-name
+      name: Extract Parent System Name
+      action: roadiehq:utils:jsonata
+      input:
+        data:
+          parentSystem: ${{parameters.parentSystem}}
+        expression: '$substringAfter(parentSystem, "/")'
+
     - id: template
       name: Generating component
       action: fetch:template
@@ -61,7 +69,7 @@ spec:
         values:
           name: ${{parameters.name}}
           parentSystem: ${{parameters.parentSystem}}
-          cleanParentSystem: ${{parameters.parentSystem | split('/') | last}}
+          cleanParentSystem: ${{ steps['extract-parent-name'].output.result }}
           githubOrg: ${{parameters.repoUrl | parseRepoUrl.owner}}
           githubRepoName: ${{parameters.repoUrl | parseRepoUrl.repo}}
           domain: ${{parameters.domain}}
