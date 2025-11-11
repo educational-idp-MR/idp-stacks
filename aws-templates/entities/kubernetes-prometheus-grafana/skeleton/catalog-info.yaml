@@ -15,9 +15,12 @@ metadata:
     backstage.io/kubernetes-namespace: default
     argocd/app-name: ${{values.name | dump}}
   links:
-    - url: https://cnoe.localtest.me:8443/gitea
+    - url: https://github.com/${{values.githubOrg}}/${{values.githubRepoName}}
       title: Repo URL
       icon: github
+    - url: https://grafana.${{values.name}}.${{values.domain}}
+      title: Grafana URL
+      icon: dashboard
 spec:
   owner: guests
   lifecycle: experimental
@@ -31,10 +34,6 @@ metadata:
   description: An example system for demonstration purposes
   annotations:
     backstage.io/techdocs-ref: dir:.
-  links:
-    - url: https://github.com/cnoe-io/stacks/tree/main/ref-implementation
-      title: CNOE Repo 
-      icon: github
 spec:
   owner: guests
   lifecycle: experimental

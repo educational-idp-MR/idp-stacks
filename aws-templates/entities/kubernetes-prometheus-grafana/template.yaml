@@ -14,7 +14,13 @@ spec:
       properties:
         name:
           type: string
-          description: name for the observability stack
+          description: name for the observability stack (only lowercase, numbers and hyphens)
+          pattern: '^[a-z0-9-]+$'
+        domain:
+          type: string
+          description: Base domain for the platform
+          default: eci-idp.click
+          ui:widget: hidden
     
     - title: Choose a location
       description: |
@@ -45,6 +51,7 @@ spec:
           name: ${{parameters.name}}
           githubOrg: ${{parameters.repoUrl | parseRepoUrl.owner}}
           githubRepoName: ${{parameters.repoUrl | parseRepoUrl.repo}}
+          domain: ${{parameters.domain}}
 
     - id: publish
       name: Publicando en GitHub
@@ -61,7 +68,7 @@ spec:
       action: cnoe:create-argocd-app
       input:
         appName: ${{parameters.name}}
-        appNamespace: monitoring
+        appNamespace: ${{parameters.name}}-monitoring
         argoInstance: in-cluster
         projectName: default
         # necessary until we generate our own cert
