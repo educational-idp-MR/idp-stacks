@@ -29,7 +29,7 @@ jobs:
       id-token: write
     env:
       # Nombre del repositorio en ECR = nombre del repo de GitHub
-      REPOSITORY: ${{ github.event.repository.name }}
+      REPOSITORY: ${{ '${{ github.event.repository.name }}' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,15 +41,15 @@ jobs:
         with:
           # aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           # aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          # aws-region: ${{ env.AWS_REGION }}
-          # Si prefieres usar OIDC/assume-role, comenta las 2 líneas de access keys y agrega:
+          aws-region: ${{ '${{ env.AWS_REGION }}' }}
+          # Usando OIDC/assume-role:
           role-to-assume: "arn:aws:iam::116981771521:role/github-actions-access-ecr"
           role-session-name: gha-ecr-session
 
       - name: Resolve AWS account and registry
         id: aws
         env:
-          AWS_REGION: ${{ env.AWS_REGION }}
+          AWS_REGION: ${{ '${{ env.AWS_REGION }}' }}
         run: |
           set -euo pipefail
           ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
@@ -58,8 +58,8 @@ jobs:
 
       - name: Login to Amazon ECR
         env:
-          AWS_REGION: ${{ env.AWS_REGION }}
-          REGISTRY: ${{ steps.aws.outputs.registry }}
+          AWS_REGION: ${{ '${{ env.AWS_REGION }}' }}
+          REGISTRY: ${{ '${{ steps.aws.outputs.registry }}' }}
         run: |
           set -euo pipefail
           aws ecr get-login-password --region "$AWS_REGION" | docker login --username AWS --password-stdin "$REGISTRY"
@@ -70,11 +70,11 @@ jobs:
           set -euo pipefail
           
           # Si se ejecuta manualmente con input de versión, usar ese valor
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ inputs.version }}"
+          if [ "${{ '${{ github.event_name }}' }}" = "workflow_dispatch" ]; then
+            VERSION="${{ '${{ inputs.version }}' }}"
             echo "Manual dispatch with version: $VERSION"
           # Si es un push a main (sin tag), usar version 0.0.0
-          elif [ "${{ github.event_name }}" = "push" ] && [ "${{ github.ref }}" = "refs/heads/main" ]; then
+          elif [ "${{ '${{ github.event_name }}' }}" = "push" ] && [ "${{ '${{ github.ref }}' }}" = "refs/heads/main" ]; then
             VERSION="0.0.0"
             echo "Push to main branch, using default version: $VERSION"
           else
@@ -96,7 +96,7 @@ jobs:
 
       - name: Ensure ECR repository exists
         env:
-          REPOSITORY: ${{ env.REPOSITORY }}
+          REPOSITORY: ${{ '${{ env.REPOSITORY }}' }}
         run: |
           set -euo pipefail
           if aws ecr describe-repositories --repository-names "$REPOSITORY" >/dev/null 2>&1; then
@@ -108,9 +108,9 @@ jobs:
 
       - name: Build Docker image
         env:
-          REGISTRY: ${{ steps.aws.outputs.registry }}
-          REPOSITORY: ${{ env.REPOSITORY }}
-          VERSION: ${{ steps.version.outputs.version }}
+          REGISTRY: ${{ '${{ steps.aws.outputs.registry }}' }}
+          REPOSITORY: ${{ '${{ env.REPOSITORY }}' }}
+          VERSION: ${{ '${{ steps.version.outputs.version }}' }}
         run: |
           set -euo pipefail
           IMAGE_URI="$REGISTRY/$REPOSITORY"
@@ -119,9 +119,9 @@ jobs:
 
       - name: Push Docker image
         env:
-          REGISTRY: ${{ steps.aws.outputs.registry }}
-          REPOSITORY: ${{ env.REPOSITORY }}
-          VERSION: ${{ steps.version.outputs.version }}
+          REGISTRY: ${{ '${{ steps.aws.outputs.registry }}' }}
+          REPOSITORY: ${{ '${{ env.REPOSITORY }}' }}
+          VERSION: ${{ '${{ steps.version.outputs.version }}' }}
         run: |
           set -euo pipefail
           IMAGE_URI="$REGISTRY/$REPOSITORY"
@@ -131,10 +131,10 @@ jobs:
 
       - name: Update deployment image and push to default branch
         env:
-          REGISTRY: ${{ steps.aws.outputs.registry }}
-          REPOSITORY: ${{ env.REPOSITORY }}
-          VERSION: ${{ steps.version.outputs.version }}
-          TARGET_BRANCH: ${{ github.event.repository.default_branch }}
+          REGISTRY: ${{ '${{ steps.aws.outputs.registry }}' }}
+          REPOSITORY: ${{ '${{ env.REPOSITORY }}' }}
+          VERSION: ${{ '${{ steps.version.outputs.version }}' }}
+          TARGET_BRANCH: ${{ '${{ github.event.repository.default_branch }}' }}
         run: |
           set -euo pipefail
           IMAGE_URI="$REGISTRY/$REPOSITORY:$VERSION"
