@@ -8,7 +8,7 @@ spec:
   owner: guests
   type: service
   parameters:
-    - title: Configuration Options!!!!
+    - title: Configuration Options!!!!!
       required:
         - name
       properties:
@@ -88,7 +88,7 @@ spec:
       name: Trigger Build and Push Workflow
       action: github:actions:dispatch
       input:
-        repoUrl: ${{ steps['publish'].output.remoteUrl }}
+        repoUrl: 'github.com?repo=${{parameters.repoUrl | parseRepoUrl.repo}}&owner=${{parameters.repoUrl | parseRepoUrl.owner}}'
         workflowId: ecr-push.yml
         branchOrTagName: main
         workflowInputs:
