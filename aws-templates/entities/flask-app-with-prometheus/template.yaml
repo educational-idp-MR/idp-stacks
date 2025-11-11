@@ -15,6 +15,12 @@ spec:
         name:
           type: string
           description: name of this application (eg. [YOUR-NAME]-app)
+        domain:
+          type: string
+          description: Base domain for the platform
+          default: eci-idp.click
+          ui:widget: hidden
+    
     - title: Select Parent Stack
       properties:
         parentSystem:
@@ -26,6 +32,25 @@ spec:
               kind: system
               spec.stackType: observability-stack
             allowArbitraryValues: false
+    - title: Choose a location
+      description: |
+        This section will ask for details about the Owner and Repository name which will then be used 
+        to create a repository in that location using your GitHub credentials.
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Enter an Owner and Repository Name
+          description: |
+            The Owner should be your GitHub org.
+          type: string
+          default: github.com?owner=educational-idp-MR
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedOrganizations:
+              - educational-idp-MR
+            allowedHosts:
+              - github.com
         
   steps:
     - id: template
@@ -36,38 +61,40 @@ spec:
         values:
           name: ${{parameters.name}}
           parentSystem: ${{parameters.parentSystem}}
+          githubOrg: ${{parameters.repoUrl | parseRepoUrl.owner}}
+          githubRepoName: ${{parameters.repoUrl | parseRepoUrl.repo}}
+          domain: ${{parameters.domain}}
 
     - id: publish
-      name: Publishing to a gitea git repository
-      action: publish:gitea
+      name: Publicando en GitHub
+      action: publish:github
       input:
-        description: This is an example app
-        # Hard coded value for this demo purposes only.
-        repoUrl: cnoe.localtest.me:8443/gitea?repo=${{parameters.name}}
+        description: ${{parameters.description}}
+        repoUrl: ${{parameters.repoUrl}}
         defaultBranch: main
+        gitCommitMessage: "Initial Url Shortener app  with basic metrics"
+        repoVisibility: public
 
     - id: create-argocd-app
       name: Create ArgoCD App
       action: cnoe:create-argocd-app
       input:
         appName: ${{parameters.name}}
-        appNamespace: ${{parameters.name}}
+        appNamespace: ${{parameters.name}}-monitoring
         argoInstance: in-cluster
         projectName: default
-        # necessary until we generate our own cert
-        repoUrl: https://cnoe.localtest.me:8443/gitea/giteaAdmin/${{parameters.name}}
+        repoUrl: ${{ steps['publish'].output.remoteUrl }}
         path: "kustomize/base"
     - id: register
       name: Register
       action: catalog:register
       input:
         repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
-        catalogInfoPath: 'catalog-info.yaml'
+        catalogInfoPath: '/catalog-info.yaml'
     
 
   output:
     links:
-      - title: Open in gitea!
-        icon: github
-        url: https://cnoe.localtest.me:8443/gitea/giteaAdmin/${{parameters.name}}
+      - title: Repositorio GitHub
+        url: ${{ steps['publish'].output.remoteUrl }}
       

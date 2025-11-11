@@ -55,7 +55,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: ${{values.name}}.cnoe.localtest.me
+    - host: ${{values.name}}.${{values.parentSystem}}.${{values.domain}}
       http:
         paths:
           - path: /.*

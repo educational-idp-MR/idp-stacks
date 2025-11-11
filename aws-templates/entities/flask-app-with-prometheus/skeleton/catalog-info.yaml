@@ -10,9 +10,12 @@ metadata:
     backstage.io/kubernetes-namespace: default
     argocd/app-name: ${{values.name | dump}}
   links:
-    - url: https://cnoe.localtest.me:8443/gitea
+    - url: https://github.com/${{values.githubOrg}}/${{values.githubRepoName}}
       title: Repo URL
       icon: github
+    - url: https://${{values.name}}.${{values.parentSystem}}.${{values.domain}}
+      title: Url Shortener App 
+      icon: externalLink
 spec:
   owner: guests
   lifecycle: experimental

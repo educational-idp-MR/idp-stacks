@@ -32,8 +32,9 @@ spec:
         repoUrl:
           title: Enter an Owner and Repository Name
           description: |
-            The Owner should be your GitHub username. The Repository name should be a name that is not one that exists already in your GitHub account.
+            The Owner should be your GitHub org.
           type: string
+          default: github.com?owner=educational-idp-MR
           ui:field: RepoUrlPicker
           ui:options:
             allowedOrganizations:
@@ -71,7 +72,6 @@ spec:
         appNamespace: ${{parameters.name}}-monitoring
         argoInstance: in-cluster
         projectName: default
-        # necessary until we generate our own cert
         repoUrl: ${{ steps['publish'].output.remoteUrl }}
         path: "kustomize/base"
     - id: register
