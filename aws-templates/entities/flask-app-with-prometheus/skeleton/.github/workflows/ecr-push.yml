@@ -4,12 +4,17 @@ on:
   push:
     tags:
       - 'release-[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., 1.0.0). If empty, defaults to 0.0.0'
+        required: false
+        default: '0.0.0'
+        type: string
 
 env:
   # Región de AWS. Configúrala como un Secret en el repo/org
-  AWS_REGION: "us-east-2"
-  # Nombre del repositorio en ECR = nombre del repo de GitHub
-  REPOSITORY: "test-create-ecr"
+  AWS_REGION: "us-east-1"
 
 jobs:
   build-and-push:
@@ -18,6 +23,9 @@ jobs:
     permissions:
       contents: write
       id-token: write
+    env:
+      # Nombre del repositorio en ECR = nombre del repo de GitHub
+      REPOSITORY: ${{ github.event.repository.name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -56,17 +64,26 @@ jobs:
         id: version
         run: |
           set -euo pipefail
-          REF_NAME="${GITHUB_REF_NAME:-}"
-          if [ -z "$REF_NAME" ]; then
-            echo "GITHUB_REF_NAME is empty" >&2
-            exit 1
+          
+          # Si se ejecuta manualmente con input de versión, usar ese valor
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+            echo "Manual dispatch with version: $VERSION"
+          else
+            # Extracción de versión desde el tag
+            REF_NAME="${GITHUB_REF_NAME:-}"
+            if [ -z "$REF_NAME" ]; then
+              echo "GITHUB_REF_NAME is empty" >&2
+              exit 1
+            fi
+            VERSION="$(printf '%s' "$REF_NAME" | sed -E 's/[^0-9.]+//g')"
+            if [ -z "$VERSION" ]; then
+              echo "Could not extract numeric version from tag: $REF_NAME" >&2
+              exit 1
+            fi
+            echo "Extracted version from tag: $VERSION"
           fi
-          VERSION="$(printf '%s' "$REF_NAME" | sed -E 's/[^0-9.]+//g')"
-          if [ -z "$VERSION" ]; then
-            echo "Could not extract numeric version from tag: $REF_NAME" >&2
-            exit 1
-          fi
-          echo "Extracted version: $VERSION"
+          
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Ensure ECR repository exists
@@ -90,7 +107,7 @@ jobs:
           set -euo pipefail
           IMAGE_URI="$REGISTRY/$REPOSITORY"
           echo "Building $IMAGE_URI ..."
-          docker build -t "$IMAGE_URI:latest" -t "$IMAGE_URI:${GITHUB_SHA}" -t "$IMAGE_URI:${VERSION}" .
+          docker build -t "$IMAGE_URI:latest" -t "$IMAGE_URI:${VERSION}" .
 
       - name: Push Docker image
         env:
@@ -102,7 +119,6 @@ jobs:
           IMAGE_URI="$REGISTRY/$REPOSITORY"
           echo "Pushing $IMAGE_URI ..."
           docker push "$IMAGE_URI:latest"
-          docker push "$IMAGE_URI:${GITHUB_SHA}"
           docker push "$IMAGE_URI:${VERSION}"
 
       - name: Update deployment image and push to default branch
@@ -114,7 +130,7 @@ jobs:
         run: |
           set -euo pipefail
           IMAGE_URI="$REGISTRY/$REPOSITORY:$VERSION"
-          FILE="python-app/deployment.yaml"
+          FILE="kustomize/base/deployment.yaml"
           echo "Updating $FILE image to $IMAGE_URI"
           # Replace the image line in the deployment manifest
           sed -i -E "s|^([[:space:]]*image:[[:space:]]*).*$|\1${IMAGE_URI}|" "$FILE"

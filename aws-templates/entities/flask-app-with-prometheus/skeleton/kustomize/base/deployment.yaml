@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: ${{values.name}}-monitoring
-        image: andresmarcelo7/prometheus_python:latest #TODO: Change this to your image
+        image: hello-world:latest #Workflows will update this image
         imagePullPolicy: Always
         ports:
         - containerPort: 5000
