@@ -84,15 +84,8 @@ spec:
         gitCommitMessage: "Initial Url Shortener app  with basic metrics"
         repoVisibility: public
 
-    - id: trigger-workflow
-      name: Trigger Build and Push Workflow
-      action: github:actions:dispatch
-      input:
-        repoUrl: 'github.com?repo=${{ steps["publish"].output.remoteUrl | parseRepoUrl.repo }}&owner=${{ steps["publish"].output.remoteUrl | parseRepoUrl.owner }}'
-        workflowId: ecr-push.yml
-        branchOrTagName: main
-        workflowInputs:
-          version: '0.0.0'
+    # El workflow ecr-push.yml se ejecutará automáticamente en el push inicial a main
+    # No se necesita dispatch manual
 
     - id: create-argocd-app
       name: Create ArgoCD App
