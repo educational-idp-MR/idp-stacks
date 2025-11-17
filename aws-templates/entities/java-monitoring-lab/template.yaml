@@ -106,6 +106,7 @@ spec:
         url: ./skeleton
         values:
           name: ${{parameters.name}}
+          appNamespace: ${{parameters.name}}-monitoring
           parentSystem: ${{parameters.parentSystem}}
           cleanParentSystem: ${{ steps['extract-parent-name'].output.result }}
           githubOrg: ${{parameters.repoUrl | parseRepoUrl.owner}}
