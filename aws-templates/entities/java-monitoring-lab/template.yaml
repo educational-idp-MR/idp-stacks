@@ -1,0 +1,111 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  description: Creates a Java Spring boot app with prometheus and loki integration
+  name: java-monitoring-lab
+  title: Java Spring boot app with prometheus and loki integration
+spec:
+  owner: guests
+  type: service
+  parameters:
+    - title: Configuration Options
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: name of this application! (eg. [YOUR-NAME]-app)
+        domain:
+          type: string
+          description: Base domain for the platform
+          default: eci-idp.click
+          ui:widget: hidden
+    
+    - title: Select Parent Stack
+      properties:
+        parentSystem:
+          title: Parent System
+          type: string
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: system
+              spec.stackType: observability-stack
+            allowArbitraryValues: false
+    - title: Choose a location
+      description: |
+        This section will ask for details about the Owner and Repository name which will then be used 
+        to create a repository in that location using your GitHub credentials.
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Enter an Owner and Repository Name
+          description: |
+            The Owner should be your GitHub org.
+          type: string
+          default: github.com?owner=educational-idp-MR
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedOrganizations:
+              - educational-idp-MR
+            allowedHosts:
+              - github.com
+        
+  steps:
+    - id: extract-parent-name
+      name: Extract Parent System Name
+      action: roadiehq:utils:jsonata
+      input:
+        data:
+          parentSystem: ${{parameters.parentSystem}}
+        expression: '$substringAfter(parentSystem, "/")'
+
+    - id: template
+      name: Generating component
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{parameters.name}}
+          parentSystem: ${{parameters.parentSystem}}
+          cleanParentSystem: ${{ steps['extract-parent-name'].output.result }}
+          githubOrg: ${{parameters.repoUrl | parseRepoUrl.owner}}
+          githubRepoName: ${{parameters.repoUrl | parseRepoUrl.repo}}
+          domain: ${{parameters.domain}}
+
+    - id: publish
+      name: Publicando en GitHub
+      action: publish:github
+      input:
+        description: ${{parameters.description}}
+        repoUrl: ${{parameters.repoUrl}}
+        defaultBranch: main
+        gitCommitMessage: "Initial Url Shortener app  with basic metrics"
+        repoVisibility: public
+
+    # El workflow ecr-push.yml se ejecutará automáticamente en el push inicial a main
+    # No se necesita dispatch manual
+
+    - id: create-argocd-app
+      name: Create ArgoCD App
+      action: cnoe:create-argocd-app
+      input:
+        appName: ${{parameters.name}}
+        appNamespace: ${{parameters.name}}-monitoring
+        argoInstance: in-cluster
+        projectName: default
+        repoUrl: ${{ steps['publish'].output.remoteUrl }}
+        path: "kustomize/base"
+    - id: register
+      name: Register
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: '/catalog-info.yaml'
+
+  output:
+    links:
+      - title: Repositorio GitHub
+        url: ${{ steps['publish'].output.remoteUrl }}
+      

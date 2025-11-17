@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: java-application
+  labels:
+    app: java-application
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: java-application
+  template:
+    metadata:
+      labels:
+        app: java-application
+    spec:
+      containers:
+      - name: java-application
+        image: java-application:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: java-application
+  labels:
+    app: java-application
+spec:
+  selector:
+    app: java-application
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
+  type: ClusterIP
