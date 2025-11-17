@@ -8,7 +8,7 @@ spec:
   owner: guests
   type: service
   parameters:
-    - title: Configuration Options 8!!
+    - title: Configuration Options 9!!
       required:
         - name
       properties:
@@ -155,9 +155,11 @@ spec:
       name: Dispatch ECR Push Workflow
       action: github:actions:dispatch
       input:
-        repoUrl: github.com?repo=${{parameters.repoUrl | parseRepoUrl.repo}}&owner=${{parameters.repoUrl | parseRepoUrl.owner}}
+        repoUrl: ${{parameters.repoUrl}}
         workflowId: ecr-push.yml
         branchOrTagName: main
+        workflowInputs:
+          version: "0.0.0"
 
     - id: create-argocd-app
       name: Create ArgoCD App
