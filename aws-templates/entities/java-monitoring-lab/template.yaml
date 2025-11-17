@@ -8,7 +8,7 @@ spec:
   owner: guests
   type: service
   parameters:
-    - title: Configuration Options!!!
+    - title: Configuration Options 4!
       required:
         - name
       properties:
@@ -130,7 +130,7 @@ spec:
         gitCommitMessage: "Initial Url Shortener app  with basic metrics"
         repoVisibility: public
         protectDefaultBranch: false
-        collaborators: ${{ steps.process-collaborators.output.result }}
+        collaborators: ${{ steps['process-collaborators'].output.result }}
 
     # El workflow ecr-push.yml se ejecutará automáticamente en el push inicial a main
     # No se necesita dispatch manual
