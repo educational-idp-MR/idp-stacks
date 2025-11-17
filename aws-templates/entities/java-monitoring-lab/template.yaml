@@ -8,7 +8,7 @@ spec:
   owner: guests
   type: service
   parameters:
-    - title: Configuration Options 9!!
+    - title: Configuration Options
       required:
         - name
       properties:
@@ -134,22 +134,10 @@ spec:
     
     #Add little delay to allow the repository to be created
     - id: sleep
-      name: Delay
+      name: Some magic is happening... enjoy a tinto meanwhile 🇨🇴
       action: roadiehq:utils:sleep
       input:
-        amount: 10
-
-    # print the real value of github.com?repo=${{parameters.repoUrl | parseRepoUrl.repo}}&owner=${{parameters.repoUrl | parseRepoUrl.owner}}
-    - id: debug-repo-url
-      name: Debug - Repo URL
-      action: debug:log
-      input:
-        message: "Repo URL"
-        listWorkspace: false
-        extra:
-          repoUrl: ${{parameters.repoUrl}}
-          repoUrlParsed: ${{parameters.repoUrl | parseRepoUrl}}
-          completeRepoUrl: ${{parameters.repoUrl | parseRepoUrl.repo}}&owner=${{parameters.repoUrl | parseRepoUrl.owner}}
+        amount: 5
 
     - id: dispatch-workflow
       name: Dispatch ECR Push Workflow
