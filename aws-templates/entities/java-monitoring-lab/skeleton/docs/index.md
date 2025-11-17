@@ -7,6 +7,7 @@ Este laboratorio te permitirá observar métricas reales, logs y comportamientos
 ## Quick Access:
 
 Accede al laboratiorio completo [Aquí](https://educational-idp-mr.github.io/idp-monitoring-lab/)
+Llena tu bitacora [Aquí](./Bitacora.md)
 
 ## Comprendiendo el dominio de la aplicación URL Shortener
 

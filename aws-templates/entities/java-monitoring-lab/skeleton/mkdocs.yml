@@ -1,0 +1,9 @@
+site_name: ${{values.name}}
+site_description: Java Spring boot app with prometheus and loki integration
+
+nav:
+  - Home: index.md
+  - Bitácora del Experimento: Bitacora.md
+
+plugins:
+  - techdocs-core
