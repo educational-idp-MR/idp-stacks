@@ -2,10 +2,6 @@ name: Build and Push to ECR
 
 on:
   push:
-    branches:
-      - main
-    paths-ignore:
-      - 'kustomize/base/deployment.yaml'
     tags:
       - 'release-[0-9]+.[0-9]+.[0-9]+'
   workflow_dispatch:
@@ -73,10 +69,6 @@ jobs:
           if [ "${{ '${{ github.event_name }}' }}" = "workflow_dispatch" ]; then
             VERSION="${{ '${{ inputs.version }}' }}"
             echo "Manual dispatch with version: $VERSION"
-          # Si es un push a main (sin tag), usar version 0.0.0
-          elif [ "${{ '${{ github.event_name }}' }}" = "push" ] && [ "${{ '${{ github.ref }}' }}" = "refs/heads/main" ]; then
-            VERSION="0.0.0"
-            echo "Push to main branch, using default version: $VERSION"
           else
             # Extracción de versión desde el tag
             REF_NAME="${GITHUB_REF_NAME:-}"
