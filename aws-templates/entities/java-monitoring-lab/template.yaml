@@ -99,17 +99,6 @@ spec:
             })
           )
 
-    - id: debug-output-collaborators
-      name: Debug - Processed Collaborators
-      action: debug:log
-      input:
-        message: "Processed collaborators output"
-        listWorkspace: false
-        extra:
-          processedCollaborators: ${{ steps.process-collaborators.output.result }}
-          resultType: ${{ typeof(steps.process-collaborators.output.result) }}
-          rawResult: ${{ steps['process-collaborators'].output }}
-
     - id: template
       name: Generating component
       action: fetch:template
