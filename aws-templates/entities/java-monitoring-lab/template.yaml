@@ -38,6 +38,7 @@ spec:
         to create a repository in that location using your GitHub credentials.
       required:
         - repoUrl
+        - collaborators
       properties:
         repoUrl:
           title: Enter an Owner and Repository Name
@@ -51,6 +52,12 @@ spec:
               - educational-idp-MR
             allowedHosts:
               - github.com
+        collaborators:
+          title: GitHub Collaborators
+          description: |
+            GitHub usernames to add as collaborators to the repository (separated by commas).
+            Example: user1,user2,user3
+          type: string
         
   steps:
     - id: extract-parent-name
@@ -60,6 +67,20 @@ spec:
         data:
           parentSystem: ${{parameters.parentSystem}}
         expression: '$substringAfter(parentSystem, "/")'
+
+    - id: process-collaborators
+      name: Process Collaborators
+      action: roadiehq:utils:jsonata
+      input:
+        data:
+          collaborators: ${{ parameters.collaborators }}
+        expression: |
+          $map($split(collaborators, ","), function($user) {
+            {
+              "username": $trim($user),
+              "access": "push"
+            }
+          })
 
     - id: template
       name: Generating component
@@ -83,6 +104,8 @@ spec:
         defaultBranch: main
         gitCommitMessage: "Initial Url Shortener app  with basic metrics"
         repoVisibility: public
+        protectDefaultBranch: false
+        collaborators: ${{ steps['process-collaborators'].output.result }}
 
     # El workflow ecr-push.yml se ejecutará automáticamente en el push inicial a main
     # No se necesita dispatch manual
