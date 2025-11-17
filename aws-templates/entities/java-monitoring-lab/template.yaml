@@ -89,12 +89,15 @@ spec:
         data:
           collaborators: ${{ parameters.collaborators }}
         expression: |
-          $map(collaborators, function($user) {
-            {
-              "user": $user,
-              "access": "push"
-            }
-          })
+          (
+            $collaboratorsList := $type(collaborators) = "array" ? collaborators : [collaborators];
+            $map($collaboratorsList, function($user) {
+              {
+                "user": $user,
+                "access": "push"
+              }
+            })
+          )
 
     - id: debug-output-collaborators
       name: Debug - Processed Collaborators
