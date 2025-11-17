@@ -8,7 +8,7 @@ spec:
   owner: guests
   type: service
   parameters:
-    - title: Configuration Options 6!!
+    - title: Configuration Options 7!!
       required:
         - name
       properties:
@@ -135,9 +135,9 @@ spec:
     #Add little delay to allow the repository to be created
     - id: delay
       name: Delay
-      action: roadiehq:utils:delay
+      action: roadiehq:utils:sleep
       input:
-        seconds: 10
+        ammount: 10
 
     # print the real value of github.com?repo=${{parameters.repoUrl | parseRepoUrl.repo}}&owner=${{parameters.repoUrl | parseRepoUrl.owner}}
     - id: debug-repo-url
