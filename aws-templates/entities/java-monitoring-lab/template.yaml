@@ -8,7 +8,7 @@ spec:
   owner: guests
   type: service
   parameters:
-    - title: Configuration Options!!
+    - title: Configuration Options!!!
       required:
         - name
       properties:
@@ -72,6 +72,16 @@ spec:
           parentSystem: ${{parameters.parentSystem}}
         expression: '$substringAfter(parentSystem, "/")'
 
+    - id: debug-input-collaborators
+      name: Debug - Input Collaborators
+      action: debug:log
+      input:
+        message: "Input collaborators from parameters"
+        listWorkspace: false
+        extra:
+          collaborators: ${{ parameters.collaborators }}
+          collaboratorsType: ${{ typeof(parameters.collaborators) }}
+
     - id: process-collaborators
       name: Process Collaborators
       action: roadiehq:utils:jsonata
@@ -81,10 +91,21 @@ spec:
         expression: |
           $map(collaborators, function($user) {
             {
-              "username": $user,
+              "user": $user,
               "access": "push"
             }
           })
+
+    - id: debug-output-collaborators
+      name: Debug - Processed Collaborators
+      action: debug:log
+      input:
+        message: "Processed collaborators output"
+        listWorkspace: false
+        extra:
+          processedCollaborators: ${{ steps.process-collaborators.output.result }}
+          resultType: ${{ typeof(steps.process-collaborators.output.result) }}
+          rawResult: ${{ steps['process-collaborators'].output }}
 
     - id: template
       name: Generating component
