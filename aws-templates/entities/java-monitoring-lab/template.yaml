@@ -8,7 +8,7 @@ spec:
   owner: guests
   type: service
   parameters:
-    - title: Configuration Options!
+    - title: Configuration Options!!
       required:
         - name
       properties:
@@ -55,9 +55,13 @@ spec:
         collaborators:
           title: GitHub Collaborators
           description: |
-            GitHub usernames to add as collaborators to the repository (separated by commas).
-            Example: user1,user2,user3
-          type: string
+            GitHub usernames to add as collaborators to the repository.
+            You can add multiple users by clicking "Add Item".
+          type: array
+          items:
+            type: string
+          ui:options:
+            orderable: false
         
   steps:
     - id: extract-parent-name
@@ -75,9 +79,9 @@ spec:
         data:
           collaborators: ${{ parameters.collaborators }}
         expression: |
-          $map($split(collaborators, ","), function($user) {
+          $map(collaborators, function($user) {
             {
-              "username": $trim($user),
+              "username": $user,
               "access": "push"
             }
           })
