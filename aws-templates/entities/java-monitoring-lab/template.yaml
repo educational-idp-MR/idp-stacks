@@ -91,12 +91,13 @@ spec:
         expression: |
           (
             $collaboratorsList := $type(collaborators) = "array" ? collaborators : [collaborators];
-            $map($collaboratorsList, function($user) {
+            $result := $map($collaboratorsList, function($user) {
               {
                 "user": $user,
                 "access": "push"
               }
-            })
+            });
+            $type($result) = "array" ? $result : [$result]
           )
 
     - id: template
