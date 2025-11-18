@@ -8,7 +8,7 @@ spec:
   owner: guests
   type: service
   parameters:
-    - title: Configuration Options
+    - title: Configuration Options!
       required:
         - name
       properties:
