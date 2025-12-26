@@ -2,7 +2,7 @@ apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
   description: |
-    🤝 TEMPLATE PARA CONTRIBUIR NUEVOS LABORATORIOS 2
+    🤝 TEMPLATE PARA CONTRIBUIR NUEVOS LABORATORIOS 3
     
     Este template ayuda a los profesores a contribuir nuevos laboratorios
     al repositorio idp-stacks de forma estructurada y consistente.
