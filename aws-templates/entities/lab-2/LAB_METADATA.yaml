@@ -1,0 +1,37 @@
+# ============================================
+# METADATA DEL LABORATORIO
+# ============================================
+# Este archivo contiene información sobre el creador y el proceso
+# de creación del laboratorio. NO MODIFICAR manualmente.
+
+labName: lab-2
+title: 
+
+creator:
+  name: Andres
+  email: felipemarcelo156@gmail.com
+  githubUsername: Andresmarcelo7
+
+creation:
+  date: ${{ "" | now }}
+  branchName: feature/lab-lab-2-by-Andresmarcelo7
+  method: backstage-template
+  templateVersion: "1.0"
+
+status:
+  current: in-development
+  # Valores posibles:
+  # - in-development: En desarrollo por el profesor
+  # - in-review: En revisión por los owners
+  # - approved: Aprobado y merged a main
+  # - deprecated: Laboratorio obsoleto
+
+characteristics:
+  difficulty: 
+  duration: 
+
+# Este archivo es útil para:
+# - Trackear quién creó qué laboratorio
+# - Mantener historial de contribuciones
+# - Automatizar reportes de actividad
+# - Identificar laboratorios sin mantenimiento
