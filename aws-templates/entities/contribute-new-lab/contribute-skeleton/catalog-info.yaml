@@ -1,0 +1,55 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{values.name | dump}}
+  description: ${{values.description | dump}}
+  annotations:
+    # Habilita la documentación técnica en Backstage
+    backstage.io/techdocs-ref: dir:.
+    
+    # Si despliega en Kubernetes, descomenta estas líneas:
+    # backstage.io/kubernetes-label-selector: 'app=${{values.name}}'
+    # backstage.io/kubernetes-namespace: ${{values.name}}
+    
+    # Si usa ArgoCD, descomenta esta línea:
+    # argocd/app-name: ${{values.name | dump}}
+  
+  # Enlaces rápidos relacionados con el laboratorio
+  links:
+    - url: https://github.com/${{values.githubOrg}}/${{values.githubRepoName}}
+      title: 📂 Repositorio GitHub
+      icon: github
+    
+    - url: https://github.com/${{values.githubOrg}}/${{values.githubRepoName}}/blob/main/README.md
+      title: 📚 Documentación
+      icon: docs
+    
+    # Si tu laboratorio despliega una aplicación, descomenta y personaliza:
+    # - url: https://${{values.name}}.${{values.domain}}
+    #   title: 🚀 Aplicación Desplegada
+    #   icon: dashboard
+
+  # Etiquetas para clasificar el componente
+  tags:
+    {%- for tag in values.tags %}
+    - ${{ tag }}
+    {%- endfor %}
+    - laboratory
+    - educational
+    - ${{values.difficulty}}
+
+spec:
+  # Tipo de componente: service, library, documentation, etc.
+  type: service
+  
+  # Ciclo de vida: experimental, production, deprecated
+  lifecycle: experimental
+  
+  # Propietario del componente (team o usuario)
+  owner: professors
+  
+  # Sistema padre al que pertenece (si existe)
+  {%- if values.parentSystem %}
+  system: ${{values.parentSystem | dump}}
+  {%- endif %}

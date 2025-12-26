@@ -293,7 +293,6 @@ spec:
           The lab is in development. See PR for details.
         # Crea el PR como DRAFT inicialmente
         draft: true
-        forceFork: true
     
   # ========================================
   # SALIDA
