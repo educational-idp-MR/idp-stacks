@@ -1,0 +1,14 @@
+site_name: ${{values.name}}
+site_description: ${{values.description}}
+
+nav:
+  - Inicio: index.md
+
+theme:
+  name: material
+  palette:
+    primary: indigo
+    accent: indigo
+
+plugins:
+  - techdocs-core

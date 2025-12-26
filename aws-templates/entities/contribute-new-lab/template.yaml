@@ -1,0 +1,322 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  description: |
+    🤝 TEMPLATE PARA CONTRIBUIR NUEVOS LABORATORIOS
+    
+    Este template ayuda a los profesores a contribuir nuevos laboratorios
+    al repositorio idp-stacks de forma estructurada y consistente.
+    
+    ¿Qué hace este template?
+    1. Crea una branch nueva en idp-stacks
+    2. Copia la estructura base del laboratorio
+    3. Hace el commit inicial con tu información
+    4. Crea un Draft PR automáticamente
+    5. Te da instrucciones claras de próximos pasos
+    
+    Importante: Todo el código queda en el mismo repositorio para
+    mantener control de calidad y revisión centralizada.
+    
+  name: contribute-new-lab
+  title: 🤝 Contribuir Nuevo Laboratorio al Catálogo
+  tags:
+    - contribution
+    - laboratory
+    - educational
+    - professor
+
+spec:
+  owner: professors
+  type: template
+  
+  parameters:
+    # ========================================
+    # Paso 1: Información del Profesor
+    # ========================================
+    - title: 👨‍🏫 Tu Información
+      description: Necesitamos saber quién está creando este laboratorio
+      required:
+        - professorName
+        - professorEmail
+        - githubUsername
+      properties:
+        professorName:
+          type: string
+          title: Tu Nombre Completo
+          description: Ej. Juan Pérez García
+          ui:autofocus: true
+        
+        professorEmail:
+          type: string
+          title: Email Institucional
+          description: Tu email @escuelaing.edu.co o institucional
+          pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        
+        githubUsername:
+          type: string
+          title: Tu Usuario de GitHub
+          description: |
+            Tu username de GitHub para agregarte como collaborator del repo.
+            Esto te permitirá hacer push directamente a tu branch.
+          pattern: '^[a-zA-Z0-9-]+$'
+    
+    # ========================================
+    # Paso 2: Información del Laboratorio
+    # ========================================
+    - title: 📚 Información del Laboratorio
+      description: Define las características básicas de tu laboratorio
+      required:
+        - labName
+        - description
+        - difficulty
+        - duration
+      properties:
+        labName:
+          type: string
+          title: Nombre del Laboratorio
+          description: |
+            Nombre corto en formato kebab-case (ej: kubernetes-deployments-lab)
+            Este nombre se usará para la carpeta y URLs
+          pattern: '^[a-z0-9-]+$'
+          ui:placeholder: mi-nuevo-lab
+        
+        title:
+          type: string
+          title: Título Descriptivo
+          description: |
+            Título completo y legible para mostrar en el catálogo
+            Ej: "Laboratorio de Deployments en Kubernetes"
+          ui:placeholder: Laboratorio de...
+        
+        description:
+          type: string
+          title: Descripción
+          description: |
+            Describe brevemente qué aprenderán los estudiantes.
+            Esta descripción aparecerá en el catálogo de Backstage.
+          ui:widget: textarea
+          ui:options:
+            rows: 3
+          ui:placeholder: En este laboratorio los estudiantes aprenderán a...
+        
+        difficulty:
+          type: string
+          title: Nivel de Dificultad
+          enum:
+            - beginner
+            - intermediate
+            - advanced
+          enumNames:
+            - '🟢 Principiante - Sin conocimientos previos requeridos'
+            - '🟡 Intermedio - Requiere conocimientos base'
+            - '🔴 Avanzado - Requiere experiencia previa'
+          default: intermediate
+        
+        duration:
+          type: string
+          title: Duración Estimada
+          enum:
+            - '30min'
+            - '1h'
+            - '2h'
+            - '3h'
+            - '4h+'
+          enumNames:
+            - '⚡ 30 minutos'
+            - '🕐 1 hora'
+            - '🕑 2 horas'
+            - '🕒 3 horas'
+            - '🕓 4 o más horas'
+          default: '2h'
+        
+        tags:
+          type: array
+          title: Etiquetas (Tags)
+          description: |
+            Agrega palabras clave para clasificar el laboratorio.
+            Ej: docker, kubernetes, monitoring, ci-cd, cloud
+          items:
+            type: string
+          ui:options:
+            orderable: false
+        
+        objectives:
+          type: string
+          title: Objetivos de Aprendizaje Principales
+          description: |
+            Lista los 3-5 objetivos de aprendizaje más importantes.
+            Usa viñetas o números para separarlos.
+          ui:widget: textarea
+          ui:options:
+            rows: 5
+          ui:placeholder: |
+            1. Comprender los conceptos de...
+            2. Implementar...
+            3. Configurar...
+    
+    # ========================================
+    # Paso 3: Sistema Padre (Opcional)
+    # ========================================
+    - title: 🔗 Sistema Padre (Opcional)
+      description: Si tu laboratorio se integra con un stack existente, selecciónalo
+      properties:
+        parentSystem:
+          title: Sistema Padre
+          type: string
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: system
+            allowArbitraryValues: false
+
+  # ========================================
+  # PASOS DE EJECUCIÓN
+  # ========================================
+  steps:
+    # Paso 1: Generar nombre de branch
+    - id: generate-branch-name
+      name: Generar Nombre de Branch
+      action: roadiehq:utils:jsonata
+      input:
+        data:
+          labName: ${{parameters.labName}}
+          githubUsername: ${{parameters.githubUsername}}
+        expression: '"feature/lab-" & labName & "-by-" & githubUsername'
+    
+    # Paso 2: Fetch del template base y generar contenido
+    - id: fetch-base-template
+      name: Generar Estructura del Laboratorio
+      action: fetch:template
+      input:
+        url: ./contribute-skeleton
+        values:
+          name: ${{parameters.labName}}
+          title: ${{parameters.title}}
+          description: ${{parameters.description}}
+          difficulty: ${{parameters.difficulty}}
+          duration: ${{parameters.duration}}
+          tags: ${{parameters.tags}}
+          objectives: ${{parameters.objectives}}
+          professorName: ${{parameters.professorName}}
+          professorEmail: ${{parameters.professorEmail}}
+          githubUsername: ${{parameters.githubUsername}}
+          githubOrg: educational-idp-MR
+          domain: eci-idp.click
+    
+    # Paso 3: Crear archivo de metadata del laboratorio
+    - id: create-lab-metadata
+      name: Crear Metadata del Laboratorio
+      action: fetch:template
+      input:
+        url: ./metadata-template
+        values:
+          labName: ${{parameters.labName}}
+          professorName: ${{parameters.professorName}}
+          professorEmail: ${{parameters.professorEmail}}
+          githubUsername: ${{parameters.githubUsername}}
+          createdDate: ${{ "" | now }}
+          branchName: ${{ steps['generate-branch-name'].output.result }}
+    
+    # Paso 5: Publicar en una BRANCH del repositorio idp-stacks
+    - id: publish-branch
+      name: Crear Branch en idp-stacks
+      action: publish:github:pull-request
+      input:
+        repoUrl: github.com?repo=idp-stacks&owner=educational-idp-MR
+        branchName: ${{ steps['generate-branch-name'].output.result }}
+        title: '🎓 Nuevo Lab: ${{parameters.title}}'
+        description: |
+          ## 📚 Nuevo Laboratorio Propuesto
+          
+          **Creado por**: @${{parameters.githubUsername}} (${{parameters.professorName}})
+          **Email**: ${{parameters.professorEmail}}
+          
+          ### Descripción
+          ${{parameters.description}}
+          
+          ### Características
+          - **Nivel**: ${{parameters.difficulty}}
+          - **Duración**: ${{parameters.duration}}
+          - **Tags**: ${{parameters.tags}}
+          
+          ### Objetivos de Aprendizaje
+          ${{parameters.objectives}}
+          
+          ---
+          
+          ## 📋 Checklist para el Profesor
+          
+          Antes de marcar este PR como "Ready for Review", asegúrate de:
+          
+          - [ ] Completar el README.md con el contenido del laboratorio
+          - [ ] Agregar código/aplicaciones necesarias
+          - [ ] Crear guías detalladas en `docs/`
+          - [ ] Agregar scripts de utilidad si son necesarios
+          - [ ] Probar el laboratorio completo
+          - [ ] Verificar que todos los comandos funcionan
+          - [ ] Agregar screenshots/diagramas donde ayuden
+          
+          ## 🔍 Checklist para Reviewers (Owners)
+          
+          Al revisar este PR, verificar:
+          
+          - [ ] La documentación es clara y completa
+          - [ ] Los objetivos de aprendizaje están bien definidos
+          - [ ] El código funciona correctamente
+          - [ ] Sigue los estándares de la plataforma
+          - [ ] No tiene información sensible (passwords, API keys)
+          - [ ] Los ejercicios tienen soluciones verificadas
+          - [ ] La estimación de tiempo es realista
+          
+          ---
+          
+          **Siguiente paso para @${{parameters.githubUsername}}**: 
+          
+          1. Clona el repositorio y checkout a tu branch
+          2. Desarrolla el contenido del laboratorio
+          3. Haz commits según avances
+          4. Cuando esté listo, marca este PR como "Ready for Review"
+          
+          ¿Preguntas? Menciona a los owners en este PR.
+        targetPath: aws-templates/entities/${{parameters.labName}}
+        sourcePath: .
+        gitCommitMessage: |
+          feat: add new lab ${{parameters.labName}}
+          
+          Created by: ${{parameters.professorName}} (@${{parameters.githubUsername}})
+          
+          This commit initializes the structure for a new laboratory:
+          - Name: ${{parameters.labName}}
+          - Level: ${{parameters.difficulty}}
+          - Duration: ${{parameters.duration}}
+          
+          The lab is in development. See PR for details.
+        # Crea el PR como DRAFT inicialmente
+        draft: true
+    
+  # ========================================
+  # SALIDA
+  # ========================================
+  output:
+    links:
+      - title: Pull Request (Draft)
+        url: ${{ steps['publish-branch'].output.remoteUrl }}/pull/${{ steps['publish-branch'].output.pullRequestNumber }}
+        icon: github
+      
+      - title: Tu Branch en GitHub
+        url: ${{ steps['publish-branch'].output.remoteUrl }}/tree/${{ steps['generate-branch-name'].output.result }}
+        icon: code
+    
+    text:
+      - title: 🎉 ¡Laboratorio Inicializado!
+        content: |
+          Tu laboratorio **${{parameters.labName}}** está listo para desarrollo.
+          
+          **Branch**: `${{ steps['generate-branch-name'].output.result }}`
+          
+          **Próximos pasos**:
+          1. Clona el repo y checkout a tu branch
+          2. Desarrolla el contenido del laboratorio
+          3. Marca el PR como "Ready for Review" cuando termines
+          
+          ¡Mucho éxito! 🚀

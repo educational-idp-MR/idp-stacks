@@ -1,0 +1,41 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{values.name | dump}}
+  description: ${{values.description | dump}}
+  annotations:
+    # Documentación técnica en Backstage
+    backstage.io/techdocs-ref: dir:.
+    
+    # Si tu laboratorio despliega en Kubernetes, descomenta:
+    # backstage.io/kubernetes-label-selector: 'entity-id=${{values.name}}'
+    # backstage.io/kubernetes-namespace: ${{values.name}}
+    
+    # Si usa ArgoCD, descomenta:
+    # argocd/app-name: ${{values.name | dump}}
+  
+  links:
+    - url: https://github.com/${{values.githubOrg}}/${{values.githubRepoName}}
+      title: Repositorio GitHub
+      icon: github
+    
+    # Si tu laboratorio despliega una aplicación, descomenta y personaliza:
+    # - url: https://${{values.name}}.${{values.domain}}
+    #   title: Aplicación Desplegada
+    #   icon: dashboard
+
+  tags:
+    - laboratory
+    - student-project
+    - ${{values.labDifficulty}}
+
+spec:
+  type: service
+  lifecycle: experimental
+  owner: students
+  
+  # Sistema padre (si el laboratorio lo define)
+  {%- if values.parentSystem %}
+  system: ${{values.parentSystem | dump}}
+  {%- endif %}

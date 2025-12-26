@@ -1,0 +1,194 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  description: ${{values.description}}
+  name: ${{values.name}}
+  title: ${{values.title}}
+  tags:
+    {%- for tag in values.tags %}
+    - ${{ tag }}
+    {%- endfor %}
+    - laboratory
+    - ${{values.difficulty}}
+
+spec:
+  owner: professors
+  type: service
+  
+  parameters:
+    # ========================================
+    # Configuración del Laboratorio
+    # ========================================
+    - title: Configuración del Proyecto
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          title: Nombre del Proyecto
+          description: |
+            Nombre para tu instancia de este laboratorio (ej. mi-proyecto-lab)
+            Usa minúsculas, números y guiones.
+          pattern: '^[a-z0-9-]+$'
+          ui:autofocus: true
+          ui:placeholder: mi-proyecto
+        
+        description:
+          type: string
+          title: Descripción (Opcional)
+          description: Personaliza la descripción de tu proyecto
+          default: ${{values.description}}
+          ui:widget: textarea
+        
+        domain:
+          type: string
+          description: Dominio base de la plataforma
+          default: eci-idp.click
+          ui:widget: hidden
+    
+    # ========================================
+    # Sistema Padre (si aplica)
+    # ========================================
+    {%- if values.parentSystem %}
+    - title: Seleccionar Stack Padre
+      properties:
+        parentSystem:
+          title: Sistema Padre
+          type: string
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: system
+              spec.stackType: ${{ values.cleanParentSystem }}
+            allowArbitraryValues: false
+    {%- endif %}
+    
+    # ========================================
+    # Repositorio GitHub
+    # ========================================
+    - title: Repositorio GitHub
+      description: El laboratorio se creará como un repositorio en GitHub
+      required:
+        - repoUrl
+        - collaborators
+      properties:
+        repoUrl:
+          title: Ubicación del Repositorio
+          description: Selecciona la organización y nombre del repositorio
+          type: string
+          default: github.com?owner=${{values.githubOrg}}
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedOrganizations:
+              - ${{values.githubOrg}}
+            allowedHosts:
+              - github.com
+        
+        collaborators:
+          title: Colaboradores de GitHub
+          description: |
+            Usuarios de GitHub que tendrán acceso al repositorio.
+            Agrega varios usuarios haciendo clic en "Add Item".
+          type: array
+          items:
+            type: string
+            ui:placeholder: github-username
+          ui:options:
+            orderable: false
+
+  # ========================================
+  # PASOS DE EJECUCIÓN
+  # ========================================
+  steps:
+    # Paso 1: Extraer nombre del sistema padre (si existe)
+    {%- if values.parentSystem %}
+    - id: extract-parent-name
+      name: Extraer Nombre del Sistema Padre
+      action: roadiehq:utils:jsonata
+      input:
+        data:
+          parentSystem: ${{parameters.parentSystem}}
+        expression: '$substringAfter(parentSystem, "/")'
+    {%- endif %}
+    
+    # Paso 2: Procesar colaboradores
+    - id: process-collaborators
+      name: Procesar Lista de Colaboradores
+      action: roadiehq:utils:jsonata
+      input:
+        data:
+          collaborators: ${{ parameters.collaborators }}
+        expression: |
+          (
+            $collaboratorsList := $type(collaborators) = "array" ? collaborators : [collaborators];
+            $result := $map($collaboratorsList, function($user) {
+              {
+                "user": $user,
+                "access": "push"
+              }
+            });
+            $type($result) = "array" ? $result : [$result]
+          )
+    
+    # Paso 3: Generar el contenido desde el skeleton
+    - id: template
+      name: Generando Estructura del Proyecto
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{parameters.name}}
+          description: ${{parameters.description}}
+          {%- if values.parentSystem %}
+          parentSystem: ${{parameters.parentSystem}}
+          cleanParentSystem: ${{ steps['extract-parent-name'].output.result }}
+          {%- endif %}
+          githubOrg: ${{parameters.repoUrl | parseRepoUrl.owner}}
+          githubRepoName: ${{parameters.repoUrl | parseRepoUrl.repo}}
+          domain: ${{parameters.domain}}
+          # Metadata del laboratorio original
+          labName: ${{values.name}}
+          labDifficulty: ${{values.difficulty}}
+          labDuration: ${{values.duration}}
+    
+    # Paso 4: Publicar en GitHub
+    - id: publish
+      name: Publicando Repositorio en GitHub
+      action: publish:github
+      input:
+        description: ${{parameters.description}}
+        repoUrl: ${{parameters.repoUrl}}
+        defaultBranch: main
+        gitCommitMessage: "Initial commit: ${{parameters.name}}"
+        repoVisibility: public
+        protectDefaultBranch: false
+        collaborators: ${{ steps['process-collaborators'].output.result }}
+    
+    # Paso 5: Esperar a que el repositorio esté listo
+    - id: sleep
+      name: Preparando repositorio...
+      action: roadiehq:utils:sleep
+      input:
+        amount: 3
+    
+    # Paso 6: Registrar en el catálogo de Backstage
+    - id: register
+      name: Registrar en Backstage Catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: '/catalog-info.yaml'
+
+  # ========================================
+  # ENLACES DE SALIDA
+  # ========================================
+  output:
+    links:
+      - title: Ver en Backstage
+        url: https://backstage.${{parameters.domain}}/catalog/default/component/${{parameters.name}}
+      
+      - title: Repositorio en GitHub
+        url: ${{ steps['publish'].output.remoteUrl }}
+      
+      - title: Documentación
+        url: ${{ steps['publish'].output.remoteUrl }}/blob/main/README.md

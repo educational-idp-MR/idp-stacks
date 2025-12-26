@@ -1,0 +1,37 @@
+# ============================================
+# METADATA DEL LABORATORIO
+# ============================================
+# Este archivo contiene información sobre el creador y el proceso
+# de creación del laboratorio. NO MODIFICAR manualmente.
+
+labName: ${{values.labName}}
+title: ${{values.title}}
+
+creator:
+  name: ${{values.professorName}}
+  email: ${{values.professorEmail}}
+  githubUsername: ${{values.githubUsername}}
+
+creation:
+  date: ${{values.createdDate}}
+  branchName: ${{values.branchName}}
+  method: backstage-template
+  templateVersion: "1.0"
+
+status:
+  current: in-development
+  # Valores posibles:
+  # - in-development: En desarrollo por el profesor
+  # - in-review: En revisión por los owners
+  # - approved: Aprobado y merged a main
+  # - deprecated: Laboratorio obsoleto
+
+characteristics:
+  difficulty: ${{values.difficulty}}
+  duration: ${{values.duration}}
+
+# Este archivo es útil para:
+# - Trackear quién creó qué laboratorio
+# - Mantener historial de contribuciones
+# - Automatizar reportes de actividad
+# - Identificar laboratorios sin mantenimiento
