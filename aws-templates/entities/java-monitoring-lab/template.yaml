@@ -162,6 +162,7 @@ spec:
 
   output:
     links:
-      - title: Repositorio GitHub
-        url: ${{ steps['publish'].output.remoteUrl }}
+      - title: Go to your App in Backstage
+        url: https://backstage.${{parameters.domain}}/catalog/default/component/${{parameters.name}}
+        
       
