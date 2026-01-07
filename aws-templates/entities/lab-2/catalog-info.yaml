@@ -1,0 +1,50 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: "lab-2"
+  description: "lab de java"
+  annotations:
+    # Habilita la documentación técnica en Backstage
+    backstage.io/techdocs-ref: dir:.
+    
+    # Si despliega en Kubernetes, descomenta estas líneas:
+    # backstage.io/kubernetes-label-selector: 'app=lab-2'
+    # backstage.io/kubernetes-namespace: lab-2
+    
+    # Si usa ArgoCD, descomenta esta línea:
+    # argocd/app-name: "lab-2"
+  
+  # Enlaces rápidos relacionados con el laboratorio
+  links:
+    - url: https://github.com/educational-idp-MR/
+      title: 📂 Repositorio GitHub
+      icon: github
+    
+    - url: https://github.com/educational-idp-MR//blob/main/README.md
+      title: 📚 Documentación
+      icon: docs
+    
+    # Si tu laboratorio despliega una aplicación, descomenta y personaliza:
+    # - url: https://lab-2.eci-idp.click
+    #   title: 🚀 Aplicación Desplegada
+    #   icon: dashboard
+
+  # Etiquetas para clasificar el componente
+  tags:
+    - test
+    - laboratory
+    - educational
+    - intermediate
+
+spec:
+  # Tipo de componente: service, library, documentation, etc.
+  type: service
+  
+  # Ciclo de vida: experimental, production, deprecated
+  lifecycle: experimental
+  
+  # Propietario del componente (team o usuario)
+  owner: professors
+  
+  # Sistema padre al que pertenece (si existe)
