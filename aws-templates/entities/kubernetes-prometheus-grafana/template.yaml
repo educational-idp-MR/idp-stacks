@@ -1,9 +1,19 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  description: Base Observability Stack (Prometheus + Loki + Grafana)
+  description: |
+    Base Observability Stack (Prometheus + Loki + Grafana).
+    Basic infrastructure to start monitoring your applications, each application is responsible for reporting its own metrics.
+    ⭐️ Rate your experience [here](https://forms.office.com/r/uWVGYUwgs0) ⭐️
   name: observability-stack
   title: Observability Stack
+  tags:
+    - laboratory
+    - educational
+    - professor
+    - prometheus
+    - loki
+    - grafana
 spec:
   owner: guests
   type: service

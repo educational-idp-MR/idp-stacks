@@ -1,9 +1,16 @@
 apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
-  description: Creates a Java Spring boot app with prometheus and loki integration
+  description: |
+    Creates a URL Shortener app with Java Spring boot, prometheus and loki integration which connects to an already existing Observability Stack.
+    ⭐️ Rate your experience [here](https://forms.office.com/r/uWVGYUwgs0) ⭐️
   name: java-monitoring-lab
   title: Java Spring boot app with prometheus and loki integration
+  tags:
+    - laboratory
+    - educational
+    - student
+    - java
 spec:
   owner: guests
   type: service
