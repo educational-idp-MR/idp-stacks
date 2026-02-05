@@ -161,18 +161,22 @@ spec:
           image: prom/prometheus:v3.3.0
           args:
             - "--config.file=/etc/prometheus/prometheus.yaml"
+            - "--storage.tsdb.retention.time=7d"
+            - "--storage.tsdb.path=/prometheus"
           ports:
             - containerPort: 9090
           volumeMounts:
             - name: config
               mountPath: /etc/prometheus
+            - name: prometheus-storage
+              mountPath: /prometheus
           resources:
             requests:
-              cpu: "250m"
-              memory: "256Mi"
-            limits:
-              cpu: "1"
+              cpu: "500m"
               memory: "512Mi"
+            limits:
+              cpu: "2"
+              memory: "1Gi"
           livenessProbe:
             httpGet:
               path: /-/healthy
@@ -189,6 +193,9 @@ spec:
         - name: config
           configMap:
             name: prometheus-config
+        - name: prometheus-storage
+          emptyDir:
+            sizeLimit: 10Gi
 ---
 # -------------------------------
 # Service: Prometheus
@@ -218,7 +225,7 @@ metadata:
   labels:
     app: grafana
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: grafana
@@ -239,13 +246,17 @@ spec:
               value: "true"
             - name: GF_AUTH_ANONYMOUS_ORG_ROLE
               value: "Admin"
+            - name: GF_DATABASE_TYPE
+              value: "sqlite3"
+            - name: GF_DATABASE_PATH
+              value: "/var/lib/grafana/grafana.db"
           resources:
             requests:
-              cpu: "250m"
-              memory: "256Mi"
-            limits:
-              cpu: "1"
+              cpu: "500m"
               memory: "512Mi"
+            limits:
+              cpu: "2"
+              memory: "1Gi"
           livenessProbe:
             httpGet:
               path: /login
@@ -261,10 +272,15 @@ spec:
           volumeMounts:
             - name: grafana-config
               mountPath: /etc/grafana/provisioning/datasources
+            - name: grafana-storage
+              mountPath: /var/lib/grafana
       volumes:
         - name: grafana-config
           configMap:
-            name: grafana-config      
+            name: grafana-config
+        - name: grafana-storage
+          emptyDir:
+            sizeLimit: 5Gi      
 ---
 # -------------------------------
 # Service: Grafana
