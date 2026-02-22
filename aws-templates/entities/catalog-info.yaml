@@ -6,15 +6,16 @@ metadata:
 spec:
   targets:
     - ./kubernetes-prometheus-grafana/template.yaml
-    - ./flask-app-with-prometheus/template.yaml
     - ./java-monitoring-lab/template.yaml
     - ./contribute-new-lab/template.yaml
-# ---
-# apiVersion: backstage.io/v1alpha1
-# kind: Location
-# metadata:
-#   name: basic-organization
-#   description: Basic organization data
-# spec:
-#   targets:
-#     - ./organization/guests.yaml
+---
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: eci-idp-organization
+  description: ECI IDP Organization
+spec:
+  targets:
+    - ./organization/contributors.yaml
+    - ./organization/students.yaml
+    - ./organization/teachers.yaml

@@ -14,7 +14,7 @@ metadata:
       title: Url Shortener App 
       icon: externalLink
 spec:
-  owner: guests
+  owner: students
   lifecycle: experimental
   type: service
   system: ${{values.parentSystem | dump}}

@@ -15,7 +15,7 @@ metadata:
     - loki
     - grafana
 spec:
-  owner: guests
+  owner: teachers
   type: service
   parameters:
     - title: Configuration Options

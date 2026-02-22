@@ -12,7 +12,7 @@ metadata:
     - student
     - java
 spec:
-  owner: guests
+  owner: students
   type: service
   parameters:
     - title: Configuration Options!

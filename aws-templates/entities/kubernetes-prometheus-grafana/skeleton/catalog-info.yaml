@@ -22,7 +22,7 @@ metadata:
       title: Grafana URL
       icon: dashboard
 spec:
-  owner: guests
+  owner: teachers
   lifecycle: experimental
   type: service
   system: ${{values.name | dump}}
@@ -35,7 +35,7 @@ metadata:
   annotations:
     backstage.io/techdocs-ref: dir:.
 spec:
-  owner: guests
+  owner: teachers
   lifecycle: experimental
   type: service
   stackType: observability-stack

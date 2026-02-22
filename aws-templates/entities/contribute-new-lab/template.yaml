@@ -26,7 +26,7 @@ metadata:
     - professor
 
 spec:
-  owner: professors
+  owner: teachers
   type: template
   
   parameters:

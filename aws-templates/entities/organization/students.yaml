@@ -2,14 +2,14 @@
 apiVersion: backstage.io/v1alpha1
 kind: User
 metadata:
-  name: guest
+  name: student
 spec:
-  memberOf: [guests]
+  memberOf: [students]
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Group
 metadata:
-  name: guests
+  name: students
 spec:
   type: team
   children: []

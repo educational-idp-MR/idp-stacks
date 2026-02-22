@@ -1,0 +1,15 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: teacher
+spec:
+  memberOf: [teachers,students]
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: teachers
+spec:
+  type: team
+  children: []

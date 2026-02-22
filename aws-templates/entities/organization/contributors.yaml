@@ -1,0 +1,15 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: contributor
+spec:
+  memberOf: [contributors]
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: contributors
+spec:
+  type: team
+  children: []
