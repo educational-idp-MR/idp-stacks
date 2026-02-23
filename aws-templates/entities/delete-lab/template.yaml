@@ -2,7 +2,7 @@ apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
   description: |
-    🗑️ TEMPLATE PARA ELIMINAR LABORATORIOS (STACK COMPLETO)!!
+    🗑️ TEMPLATE PARA ELIMINAR LABORATORIOS
     
     Este template permite eliminar completamente un stack de observabilidad
     y TODOS los componentes asociados (apps de estudiantes), incluyendo:
@@ -30,7 +30,7 @@ spec:
     # ========================================
     - title: ⚠️ Seleccionar Stack a Eliminar
       description: |
-        Selecciona el **System (Stack de Observabilidad)** que deseas eliminar.
+        Selecciona el **System (Stack)** que deseas eliminar.
         **ADVERTENCIA**: Esto eliminará el stack Y TODAS las aplicaciones de estudiantes asociadas.
       required:
         - systemRef
@@ -129,15 +129,7 @@ spec:
         logRequestPath: true
         continueOnBadResponse: true
 
-    # Paso 7: Debug - ver qué retornó el query de componentes
-    - id: log-components-raw
-      name: Debug - Componentes Encontrados
-      action: debug:log
-      input:
-        message: "Componentes encontrados (raw body): ${{ steps['fetch-child-components'].output.body }}"
-        listWorkspace: false
-
-    # Paso 8: Extraer argocd app names de los componentes hijos
+    # Paso 7: Extraer argocd app names de los componentes hijos
     - id: extract-child-argocd-names
       name: Extraer ArgoCD App Names de Componentes
       action: roadiehq:utils:jsonata
@@ -147,15 +139,7 @@ spec:
         expression: >
           $append([], components.metadata.annotations.`argocd/app-name`)
 
-    # Paso 9: Debug - ver argocd names extraídos
-    - id: log-argocd-names
-      name: Debug - ArgoCD Names
-      action: debug:log
-      input:
-        message: "ArgoCD app names: ${{ steps['extract-child-argocd-names'].output.result }}"
-        listWorkspace: false
-
-    # Paso 10: Extraer UIDs de los componentes hijos
+    # Paso 8: Extraer UIDs de los componentes hijos
     - id: extract-child-uids
       name: Extraer UIDs de Componentes
       action: roadiehq:utils:jsonata
@@ -165,7 +149,7 @@ spec:
         expression: >
           $append([], components.metadata.uid)
 
-    # Paso 11: Extraer location refs de los componentes hijos
+    # Paso 9: Extraer location refs de los componentes hijos
     - id: extract-child-location-refs
       name: Extraer Location Refs de Componentes
       action: roadiehq:utils:jsonata
@@ -175,7 +159,7 @@ spec:
         expression: >
           $append([], components.metadata.annotations.`backstage.io/managed-by-location`)
 
-    # Paso 12: Obtener todas las Locations del catálogo
+    # Paso 10: Obtener todas las Locations del catálogo
     - id: fetch-all-locations
       name: Obtener Locations del Catálogo
       action: http:backstage:request
@@ -185,7 +169,7 @@ spec:
         logRequestPath: true
         continueOnBadResponse: true
 
-    # Paso 13: Extraer Location IDs que coinciden con los componentes hijos
+    # Paso 11: Extraer Location IDs que coinciden con los componentes hijos
     - id: extract-child-location-ids
       name: Extraer Location IDs de Componentes
       action: roadiehq:utils:jsonata
@@ -200,7 +184,7 @@ spec:
             })
           )
 
-    # Paso 14: Extraer Location ID del System
+    # Paso 12: Extraer Location ID del System
     - id: extract-system-location-id
       name: Extraer Location ID del System
       action: roadiehq:utils:jsonata
@@ -210,22 +194,6 @@ spec:
           locations: ${{ steps['fetch-all-locations'].output.body }}
         expression: |
           $filter(locations, function($l) { $l.data.target = $substringAfter(locationRef, "url:") })[0].data.id
-
-    # Paso 15: Log de información antes de eliminar
-    - id: log-info
-      name: Verificar Información de Eliminación
-      action: debug:log
-      input:
-        message: |
-          === ELIMINACIÓN DE STACK ===
-          System: ${{ steps['extract-system-name'].output.result }}
-          System UID: ${{ steps['extract-system-uid'].output.result }}
-          System ArgoCD App: ${{ steps['extract-system-argocd'].output.result }}
-          System Location ID: ${{ steps['extract-system-location-id'].output.result }}
-          Child ArgoCD Apps: ${{ steps['extract-child-argocd-names'].output.result }}
-          Child UIDs: ${{ steps['extract-child-uids'].output.result }}
-          Child Location IDs: ${{ steps['extract-child-location-ids'].output.result }}
-        listWorkspace: false
 
     # --------------------------------------------------
     # FASE 2: Eliminar aplicaciones de ArgoCD (componentes hijos)
@@ -301,18 +269,6 @@ spec:
         path: /catalog/entities/by-uid/${{ steps['extract-system-uid'].output.result }}
         logRequestPath: true
         continueOnBadResponse: true
-
-    # Paso final: Log de resultados
-    - id: log-final
-      name: Verificar Resultados Finales
-      action: debug:log
-      input:
-        message: |
-          === RESULTADOS DE ELIMINACIÓN ===
-          System ArgoCD Delete: ${{ steps['delete-system-argocd-app'].output.code }}
-          System Location Delete: ${{ steps['delete-system-location'].output.code }}
-          System Entity Delete: ${{ steps['delete-system-entity'].output.code }}
-        listWorkspace: false
 
   # ========================================
   # SALIDA
