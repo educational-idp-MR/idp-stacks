@@ -1,0 +1,166 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  description: |
+    🗑️ TEMPLATE PARA ELIMINAR LABORATORIOS
+    
+    Este template permite eliminar completamente un laboratorio desplegado,
+    incluyendo:
+    1. La aplicación de ArgoCD (y todos los recursos de Kubernetes asociados)
+    2. La entidad registrada en el catálogo de Backstage
+    
+    ⚠️ Esta acción es IRREVERSIBLE. Los recursos de Kubernetes serán eliminados
+    permanentemente. El repositorio de GitHub NO será afectado.
+    
+  name: delete-lab
+  title: 🗑️ Eliminar Laboratorio
+  tags:
+    - delete
+    - cleanup
+    - laboratory
+    - management
+
+spec:
+  owner: teachers
+  type: service
+  
+  parameters:
+    # ========================================
+    # Paso 1: Seleccionar el Componente
+    # ========================================
+    - title: ⚠️ Seleccionar Laboratorio a Eliminar
+      description: |
+        Selecciona el componente que deseas eliminar del catálogo y de ArgoCD.
+        **ADVERTENCIA**: Esta acción eliminará permanentemente los recursos de Kubernetes.
+      required:
+        - componentRef
+      properties:
+        componentRef:
+          title: Componente a Eliminar
+          type: string
+          description: Selecciona el componente del catálogo que deseas eliminar
+          ui:field: EntityPicker
+          ui:options:
+            catalogFilter:
+              kind: Component
+            allowArbitraryValues: false
+
+    # ========================================
+    # Paso 2: Confirmación
+    # ========================================
+    - title: 🔐 Confirmación de Eliminación
+      description: |
+        Por favor confirma que deseas eliminar este laboratorio.
+        Esta acción NO se puede deshacer.
+      required:
+        - confirmDelete
+      properties:
+        confirmDelete:
+          type: string
+          title: Escribe ELIMINAR para confirmar
+          description: Escribe la palabra ELIMINAR (en mayúsculas) para confirmar la eliminación
+          pattern: '^ELIMINAR$'
+
+  # ========================================
+  # PASOS DE EJECUCIÓN
+  # ========================================
+  steps:
+    # Paso 1: Obtener información de la entidad del catálogo
+    - id: fetch-entity
+      name: Obtener Información del Componente
+      action: catalog:fetch
+      input:
+        entityRef: ${{ parameters.componentRef }}
+
+    # Paso 2: Extraer el nombre de la app de ArgoCD desde las annotations
+    - id: extract-argocd-app-name
+      name: Extraer Nombre de App en ArgoCD
+      action: roadiehq:utils:jsonata
+      input:
+        data:
+          entity: ${{ steps['fetch-entity'].output.entity }}
+        expression: >
+          entity.metadata.annotations.`argocd/app-name`
+            ? entity.metadata.annotations.`argocd/app-name`
+            : entity.metadata.name
+
+    # Paso 3: Extraer el UID de la entidad para desregistrarla
+    - id: extract-entity-uid
+      name: Extraer UID de la Entidad
+      action: roadiehq:utils:jsonata
+      input:
+        data:
+          entity: ${{ steps['fetch-entity'].output.entity }}
+        expression: >
+          entity.metadata.uid
+
+    # Paso 4: Log de información antes de eliminar
+    - id: log-info
+      name: Verificar Información de Eliminación
+      action: debug:log
+      input:
+        message: |
+          Procediendo a eliminar:
+          - ArgoCD App: ${{ steps['extract-argocd-app-name'].output.result }}
+          - Backstage Entity UID: ${{ steps['extract-entity-uid'].output.result }}
+          - Component Ref: ${{ parameters.componentRef }}
+        listWorkspace: false
+
+    # Paso 5: Eliminar la aplicación de ArgoCD
+    # Esto también elimina todos los recursos de Kubernetes gestionados (cascade)
+    - id: delete-argocd-app
+      name: Eliminar Aplicación de ArgoCD
+      action: http:backstage:request
+      input:
+        method: DELETE
+        path: /api/argocd/argoInstance/in-cluster/applications/${{ steps['extract-argocd-app-name'].output.result }}
+        logRequestPath: true
+        continueOnBadResponse: true
+
+    # Paso 6: Log del resultado de eliminación de ArgoCD
+    - id: log-argocd-result
+      name: Verificar Resultado de ArgoCD
+      action: debug:log
+      input:
+        message: |
+          Resultado de eliminación en ArgoCD:
+          - Status Code: ${{ steps['delete-argocd-app'].output.code }}
+          - Body: ${{ steps['delete-argocd-app'].output.body }}
+        listWorkspace: false
+
+    # Paso 7: Desregistrar la entidad del catálogo de Backstage
+    - id: unregister-entity
+      name: Desregistrar Entidad del Catálogo
+      action: http:backstage:request
+      input:
+        method: DELETE
+        path: /api/catalog/entities/by-uid/${{ steps['extract-entity-uid'].output.result }}
+        logRequestPath: true
+        continueOnBadResponse: true
+
+    # Paso 8: Log del resultado de desregistro
+    - id: log-unregister-result
+      name: Verificar Resultado de Desregistro
+      action: debug:log
+      input:
+        message: |
+          Resultado de desregistro en Backstage:
+          - Status Code: ${{ steps['unregister-entity'].output.code }}
+          - Body: ${{ steps['unregister-entity'].output.body }}
+        listWorkspace: false
+
+  # ========================================
+  # SALIDA
+  # ========================================
+  output:
+    text:
+      - title: 🗑️ Laboratorio Eliminado
+        content: |
+          El laboratorio **${{ steps['extract-argocd-app-name'].output.result }}** ha sido procesado para eliminación.
+          
+          **Resultados:**
+          - ArgoCD: Status ${{ steps['delete-argocd-app'].output.code }}
+          - Backstage: Status ${{ steps['unregister-entity'].output.code }}
+          
+          **Nota:** Los recursos de Kubernetes pueden tardar unos minutos en eliminarse completamente.
+          El repositorio de GitHub NO fue modificado.

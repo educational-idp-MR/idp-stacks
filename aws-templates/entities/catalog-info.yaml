@@ -8,6 +8,7 @@ spec:
     - ./kubernetes-prometheus-grafana/template.yaml
     - ./java-monitoring-lab/template.yaml
     - ./contribute-new-lab/template.yaml
+    - ./delete-lab/template.yaml
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Location
