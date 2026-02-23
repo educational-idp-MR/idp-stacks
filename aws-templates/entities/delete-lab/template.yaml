@@ -2,7 +2,7 @@ apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
   description: |
-    🗑️ TEMPLATE PARA ELIMINAR LABORATORIOS!
+    🗑️ TEMPLATE PARA ELIMINAR LABORATORIOS!!
     
     Este template permite eliminar completamente un laboratorio desplegado,
     incluyendo:
@@ -94,7 +94,17 @@ spec:
         expression: >
           entity.metadata.uid
 
-    # Paso 4: Log de información antes de eliminar
+    # Paso 4: Extraer la Location que gestiona esta entidad
+    - id: extract-location-ref
+      name: Extraer Location de Origen
+      action: roadiehq:utils:jsonata
+      input:
+        data:
+          entity: ${{ steps['fetch-entity'].output.entity }}
+        expression: >
+          entity.metadata.annotations.`backstage.io/managed-by-location`
+
+    # Paso 5: Log de información antes de eliminar
     - id: log-info
       name: Verificar Información de Eliminación
       action: debug:log
@@ -103,6 +113,7 @@ spec:
           Procediendo a eliminar:
           - ArgoCD App: ${{ steps['extract-argocd-app-name'].output.result }}
           - Backstage Entity UID: ${{ steps['extract-entity-uid'].output.result }}
+          - Managed by Location: ${{ steps['extract-location-ref'].output.result }}
           - Component Ref: ${{ parameters.componentRef }}
         listWorkspace: false
 
@@ -128,7 +139,55 @@ spec:
           - Body: ${{ steps['delete-argocd-app'].output.body }}
         listWorkspace: false
 
-    # Paso 7: Desregistrar la entidad del catálogo de Backstage
+    # Paso 7: Buscar la Location en el catálogo para obtener su ID
+    - id: find-location
+      name: Buscar Location en el Catálogo
+      action: http:backstage:request
+      input:
+        method: GET
+        path: /catalog/locations
+        logRequestPath: true
+        continueOnBadResponse: true
+
+    # Paso 8: Extraer el ID de la Location que coincide con esta entidad
+    - id: extract-location-id
+      name: Extraer ID de la Location
+      action: roadiehq:utils:jsonata
+      input:
+        data:
+          locations: ${{ steps['find-location'].output.body }}
+          locationRef: ${{ steps['extract-location-ref'].output.result }}
+        expression: >
+          (
+            $target := $substringAfter(locationRef, "url:");
+            $match := $filter(locations, function($loc) {
+              $loc.data.target = $target
+            });
+            $count($match) > 0 ? $match[0].data.id : null
+          )
+
+    # Paso 9: Log de la Location encontrada
+    - id: log-location
+      name: Verificar Location Encontrada
+      action: debug:log
+      input:
+        message: |
+          Location encontrada:
+          - Location Ref: ${{ steps['extract-location-ref'].output.result }}
+          - Location ID: ${{ steps['extract-location-id'].output.result }}
+        listWorkspace: false
+
+    # Paso 10: Eliminar la Location del catálogo (esto evita que Backstage re-descubra la entidad)
+    - id: delete-location
+      name: Eliminar Location del Catálogo
+      action: http:backstage:request
+      input:
+        method: DELETE
+        path: /catalog/locations/${{ steps['extract-location-id'].output.result }}
+        logRequestPath: true
+        continueOnBadResponse: true
+
+    # Paso 11: Desregistrar la entidad del catálogo de Backstage
     - id: unregister-entity
       name: Desregistrar Entidad del Catálogo
       action: http:backstage:request
@@ -138,15 +197,15 @@ spec:
         logRequestPath: true
         continueOnBadResponse: true
 
-    # Paso 8: Log del resultado de desregistro
+    # Paso 12: Log del resultado de desregistro
     - id: log-unregister-result
       name: Verificar Resultado de Desregistro
       action: debug:log
       input:
         message: |
           Resultado de desregistro en Backstage:
-          - Status Code: ${{ steps['unregister-entity'].output.code }}
-          - Body: ${{ steps['unregister-entity'].output.body }}
+          - Location Delete Status: ${{ steps['delete-location'].output.code }}
+          - Entity Delete Status: ${{ steps['unregister-entity'].output.code }}
         listWorkspace: false
 
   # ========================================
@@ -160,7 +219,8 @@ spec:
           
           **Resultados:**
           - ArgoCD: Status ${{ steps['delete-argocd-app'].output.code }}
-          - Backstage: Status ${{ steps['unregister-entity'].output.code }}
+          - Location: Status ${{ steps['delete-location'].output.code }}
+          - Entity: Status ${{ steps['unregister-entity'].output.code }}
           
           **Nota:** Los recursos de Kubernetes pueden tardar unos minutos en eliminarse completamente.
           El repositorio de GitHub NO fue modificado.
