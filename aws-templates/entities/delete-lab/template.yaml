@@ -2,7 +2,7 @@ apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
   description: |
-    🗑️ TEMPLATE PARA ELIMINAR LABORATORIOS
+    🗑️ TEMPLATE PARA ELIMINAR LABORATORIOS!
     
     Este template permite eliminar completamente un laboratorio desplegado,
     incluyendo:
@@ -113,7 +113,7 @@ spec:
       action: http:backstage:request
       input:
         method: DELETE
-        path: /api/argocd/argoInstance/in-cluster/applications/${{ steps['extract-argocd-app-name'].output.result }}
+        path: /argocd/argoInstance/in-cluster/applications/${{ steps['extract-argocd-app-name'].output.result }}
         logRequestPath: true
         continueOnBadResponse: true
 
@@ -134,7 +134,7 @@ spec:
       action: http:backstage:request
       input:
         method: DELETE
-        path: /api/catalog/entities/by-uid/${{ steps['extract-entity-uid'].output.result }}
+        path: /catalog/entities/by-uid/${{ steps['extract-entity-uid'].output.result }}
         logRequestPath: true
         continueOnBadResponse: true
 
