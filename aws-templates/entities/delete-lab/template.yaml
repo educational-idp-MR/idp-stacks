@@ -196,9 +196,7 @@ spec:
         expression: |
           $append([],
             $map(locationRefs, function($ref) {
-              $target := $substringAfter($ref, "url:");
-              $loc := $filter(locations, function($l) { $l.data.target = $target });
-              $count($loc) > 0 ? $loc[0].data.id : "not-found"
+              $filter(locations, function($l) { $l.data.target = $substringAfter($ref, "url:") })[0].data.id
             })
           )
 
@@ -211,11 +209,7 @@ spec:
           locationRef: ${{ steps['extract-system-location-ref'].output.result }}
           locations: ${{ steps['fetch-all-locations'].output.body }}
         expression: |
-          (
-            $target := $substringAfter(locationRef, "url:");
-            $loc := $filter(locations, function($l) { $l.data.target = $target });
-            $count($loc) > 0 ? $loc[0].data.id : "not-found"
-          )
+          $filter(locations, function($l) { $l.data.target = $substringAfter(locationRef, "url:") })[0].data.id
 
     # Paso 15: Log de información antes de eliminar
     - id: log-info
