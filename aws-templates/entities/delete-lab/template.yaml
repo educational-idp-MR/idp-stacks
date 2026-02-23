@@ -2,7 +2,7 @@ apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
   description: |
-    🗑️ TEMPLATE PARA ELIMINAR LABORATORIOS (STACK COMPLETO)
+    🗑️ TEMPLATE PARA ELIMINAR LABORATORIOS (STACK COMPLETO)!
     
     Este template permite eliminar completamente un stack de observabilidad
     y TODOS los componentes asociados (apps de estudiantes), incluyendo:
@@ -87,7 +87,39 @@ spec:
         expression: >
           entity.metadata.name
 
-    # Paso 3: Consultar todos los componentes que pertenecen a este System
+    # Paso 3: Extraer UID del System
+    - id: extract-system-uid
+      name: Extraer UID del System
+      action: roadiehq:utils:jsonata
+      input:
+        data:
+          entity: ${{ steps['fetch-system'].output.entity }}
+        expression: >
+          entity.metadata.uid
+
+    # Paso 4: Extraer ArgoCD app name del System
+    - id: extract-system-argocd
+      name: Extraer ArgoCD App del System
+      action: roadiehq:utils:jsonata
+      input:
+        data:
+          entity: ${{ steps['fetch-system'].output.entity }}
+        expression: >
+          entity.metadata.annotations.`argocd/app-name`
+            ? entity.metadata.annotations.`argocd/app-name`
+            : entity.metadata.name
+
+    # Paso 5: Extraer location ref del System
+    - id: extract-system-location-ref
+      name: Extraer Location Ref del System
+      action: roadiehq:utils:jsonata
+      input:
+        data:
+          entity: ${{ steps['fetch-system'].output.entity }}
+        expression: >
+          entity.metadata.annotations.`backstage.io/managed-by-location`
+
+    # Paso 6: Consultar todos los componentes que pertenecen a este System
     - id: fetch-child-components
       name: Buscar Componentes del System
       action: http:backstage:request
@@ -97,28 +129,53 @@ spec:
         logRequestPath: true
         continueOnBadResponse: true
 
-    # Paso 4: Extraer datos de los componentes hijos para los loops
-    - id: extract-components-data
-      name: Extraer Datos de Componentes
+    # Paso 7: Debug - ver qué retornó el query de componentes
+    - id: log-components-raw
+      name: Debug - Componentes Encontrados
+      action: debug:log
+      input:
+        message: "Componentes encontrados (raw body): ${{ steps['fetch-child-components'].output.body }}"
+        listWorkspace: false
+
+    # Paso 8: Extraer argocd app names de los componentes hijos
+    - id: extract-child-argocd-names
+      name: Extraer ArgoCD App Names de Componentes
       action: roadiehq:utils:jsonata
       input:
         data:
           components: ${{ steps['fetch-child-components'].output.body }}
-        expression: |
-          (
-            $map(components, function($comp) {
-              {
-                "name": $comp.metadata.name,
-                "uid": $comp.metadata.uid,
-                "argoAppName": $lookup($comp.metadata.annotations, "argocd/app-name") 
-                  ? $lookup($comp.metadata.annotations, "argocd/app-name") 
-                  : $comp.metadata.name,
-                "locationRef": $lookup($comp.metadata.annotations, "backstage.io/managed-by-location")
-              }
-            })
-          )
+        expression: >
+          $append([], components.metadata.annotations.`argocd/app-name`)
 
-    # Paso 5: Obtener todas las Locations del catálogo
+    # Paso 9: Debug - ver argocd names extraídos
+    - id: log-argocd-names
+      name: Debug - ArgoCD Names
+      action: debug:log
+      input:
+        message: "ArgoCD app names: ${{ steps['extract-child-argocd-names'].output.result }}"
+        listWorkspace: false
+
+    # Paso 10: Extraer UIDs de los componentes hijos
+    - id: extract-child-uids
+      name: Extraer UIDs de Componentes
+      action: roadiehq:utils:jsonata
+      input:
+        data:
+          components: ${{ steps['fetch-child-components'].output.body }}
+        expression: >
+          $append([], components.metadata.uid)
+
+    # Paso 11: Extraer location refs de los componentes hijos
+    - id: extract-child-location-refs
+      name: Extraer Location Refs de Componentes
+      action: roadiehq:utils:jsonata
+      input:
+        data:
+          components: ${{ steps['fetch-child-components'].output.body }}
+        expression: >
+          $append([], components.metadata.annotations.`backstage.io/managed-by-location`)
+
+    # Paso 12: Obtener todas las Locations del catálogo
     - id: fetch-all-locations
       name: Obtener Locations del Catálogo
       action: http:backstage:request
@@ -128,57 +185,39 @@ spec:
         logRequestPath: true
         continueOnBadResponse: true
 
-    # Paso 6: Extraer Location IDs para los componentes hijos
-    - id: extract-component-location-ids
+    # Paso 13: Extraer Location IDs que coinciden con los componentes hijos
+    - id: extract-child-location-ids
       name: Extraer Location IDs de Componentes
       action: roadiehq:utils:jsonata
       input:
         data:
-          components: ${{ steps['extract-components-data'].output.result }}
+          locationRefs: ${{ steps['extract-child-location-refs'].output.result }}
           locations: ${{ steps['fetch-all-locations'].output.body }}
-        expression: |
-          (
-            $map(components, function($comp) {
-              $target := $substringAfter($comp.locationRef, "url:");
-              $match := $filter(locations, function($loc) {
-                $loc.data.target = $target
-              });
-              {
-                "name": $comp.name,
-                "uid": $comp.uid,
-                "argoAppName": $comp.argoAppName,
-                "locationId": $count($match) > 0 ? $match[0].data.id : null
-              }
+        expression: >
+          $append([],
+            $map(locationRefs, function($ref) {
+              $target := $substringAfter($ref, "url:");
+              $loc := $filter(locations, function($l) { $l.data.target = $target });
+              $count($loc) > 0 ? $loc[0].data.id : "not-found"
             })
           )
 
-    # Paso 7: Extraer datos del System entity (UID, location, argocd app)
-    - id: extract-system-data
-      name: Extraer Datos del System
+    # Paso 14: Extraer Location ID del System
+    - id: extract-system-location-id
+      name: Extraer Location ID del System
       action: roadiehq:utils:jsonata
       input:
         data:
-          entity: ${{ steps['fetch-system'].output.entity }}
+          locationRef: ${{ steps['extract-system-location-ref'].output.result }}
           locations: ${{ steps['fetch-all-locations'].output.body }}
-        expression: |
+        expression: >
           (
-            $locationRef := entity.metadata.annotations.`backstage.io/managed-by-location`;
-            $target := $substringAfter($locationRef, "url:");
-            $match := $filter(locations, function($loc) {
-              $loc.data.target = $target
-            });
-            {
-              "name": entity.metadata.name,
-              "uid": entity.metadata.uid,
-              "argoAppName": entity.metadata.annotations.`argocd/app-name`
-                ? entity.metadata.annotations.`argocd/app-name`
-                : entity.metadata.name,
-              "locationRef": $locationRef,
-              "locationId": $count($match) > 0 ? $match[0].data.id : null
-            }
+            $target := $substringAfter(locationRef, "url:");
+            $loc := $filter(locations, function($l) { $l.data.target = $target });
+            $count($loc) > 0 ? $loc[0].data.id : "not-found"
           )
 
-    # Paso 8: Log de información antes de eliminar
+    # Paso 15: Log de información antes de eliminar
     - id: log-info
       name: Verificar Información de Eliminación
       action: debug:log
@@ -186,10 +225,12 @@ spec:
         message: |
           === ELIMINACIÓN DE STACK ===
           System: ${{ steps['extract-system-name'].output.result }}
-          System UID: ${{ steps['extract-system-data'].output.result.uid }}
-          System ArgoCD App: ${{ steps['extract-system-data'].output.result.argoAppName }}
-          System Location ID: ${{ steps['extract-system-data'].output.result.locationId }}
-          Componentes encontrados: ${{ steps['extract-component-location-ids'].output.result }}
+          System UID: ${{ steps['extract-system-uid'].output.result }}
+          System ArgoCD App: ${{ steps['extract-system-argocd'].output.result }}
+          System Location ID: ${{ steps['extract-system-location-id'].output.result }}
+          Child ArgoCD Apps: ${{ steps['extract-child-argocd-names'].output.result }}
+          Child UIDs: ${{ steps['extract-child-uids'].output.result }}
+          Child Location IDs: ${{ steps['extract-child-location-ids'].output.result }}
         listWorkspace: false
 
     # --------------------------------------------------
@@ -197,11 +238,11 @@ spec:
     # --------------------------------------------------
     - id: delete-child-argocd-apps
       name: Eliminar Apps de ArgoCD (Componentes)
-      each: ${{ steps['extract-component-location-ids'].output.result }}
+      each: ${{ steps['extract-child-argocd-names'].output.result }}
       action: http:backstage:request
       input:
         method: DELETE
-        path: /argocd/argoInstance/in-cluster/applications/${{ each.value.argoAppName }}
+        path: /argocd/argoInstance/in-cluster/applications/${{ each.value }}
         logRequestPath: true
         continueOnBadResponse: true
 
@@ -213,7 +254,7 @@ spec:
       action: http:backstage:request
       input:
         method: DELETE
-        path: /argocd/argoInstance/in-cluster/applications/${{ steps['extract-system-data'].output.result.argoAppName }}
+        path: /argocd/argoInstance/in-cluster/applications/${{ steps['extract-system-argocd'].output.result }}
         logRequestPath: true
         continueOnBadResponse: true
 
@@ -222,11 +263,11 @@ spec:
     # --------------------------------------------------
     - id: delete-child-locations
       name: Eliminar Locations (Componentes)
-      each: ${{ steps['extract-component-location-ids'].output.result }}
+      each: ${{ steps['extract-child-location-ids'].output.result }}
       action: http:backstage:request
       input:
         method: DELETE
-        path: /catalog/locations/${{ each.value.locationId }}
+        path: /catalog/locations/${{ each.value }}
         logRequestPath: true
         continueOnBadResponse: true
 
@@ -235,11 +276,11 @@ spec:
     # --------------------------------------------------
     - id: delete-child-entities
       name: Desregistrar Entidades (Componentes)
-      each: ${{ steps['extract-component-location-ids'].output.result }}
+      each: ${{ steps['extract-child-uids'].output.result }}
       action: http:backstage:request
       input:
         method: DELETE
-        path: /catalog/entities/by-uid/${{ each.value.uid }}
+        path: /catalog/entities/by-uid/${{ each.value }}
         logRequestPath: true
         continueOnBadResponse: true
 
@@ -251,7 +292,7 @@ spec:
       action: http:backstage:request
       input:
         method: DELETE
-        path: /catalog/locations/${{ steps['extract-system-data'].output.result.locationId }}
+        path: /catalog/locations/${{ steps['extract-system-location-id'].output.result }}
         logRequestPath: true
         continueOnBadResponse: true
 
@@ -263,7 +304,7 @@ spec:
       action: http:backstage:request
       input:
         method: DELETE
-        path: /catalog/entities/by-uid/${{ steps['extract-system-data'].output.result.uid }}
+        path: /catalog/entities/by-uid/${{ steps['extract-system-uid'].output.result }}
         logRequestPath: true
         continueOnBadResponse: true
 
