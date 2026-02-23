@@ -2,7 +2,7 @@ apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
   description: |
-    🗑️ TEMPLATE PARA ELIMINAR LABORATORIOS (STACK COMPLETO)!
+    🗑️ TEMPLATE PARA ELIMINAR LABORATORIOS (STACK COMPLETO)!!
     
     Este template permite eliminar completamente un stack de observabilidad
     y TODOS los componentes asociados (apps de estudiantes), incluyendo:
@@ -193,7 +193,7 @@ spec:
         data:
           locationRefs: ${{ steps['extract-child-location-refs'].output.result }}
           locations: ${{ steps['fetch-all-locations'].output.body }}
-        expression: >
+        expression: |
           $append([],
             $map(locationRefs, function($ref) {
               $target := $substringAfter($ref, "url:");
@@ -210,7 +210,7 @@ spec:
         data:
           locationRef: ${{ steps['extract-system-location-ref'].output.result }}
           locations: ${{ steps['fetch-all-locations'].output.body }}
-        expression: >
+        expression: |
           (
             $target := $substringAfter(locationRef, "url:");
             $loc := $filter(locations, function($l) { $l.data.target = $target });
