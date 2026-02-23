@@ -2,18 +2,18 @@ apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
   description: |
-    🗑️ TEMPLATE PARA ELIMINAR LABORATORIOS!!
+    🗑️ TEMPLATE PARA ELIMINAR LABORATORIOS (STACK COMPLETO)
     
-    Este template permite eliminar completamente un laboratorio desplegado,
-    incluyendo:
-    1. La aplicación de ArgoCD (y todos los recursos de Kubernetes asociados)
-    2. La entidad registrada en el catálogo de Backstage
+    Este template permite eliminar completamente un stack de observabilidad
+    y TODOS los componentes asociados (apps de estudiantes), incluyendo:
+    1. Todas las aplicaciones de ArgoCD (stack + apps hijas)
+    2. Todas las entidades y locations registradas en el catálogo de Backstage
     
     ⚠️ Esta acción es IRREVERSIBLE. Los recursos de Kubernetes serán eliminados
-    permanentemente. El repositorio de GitHub NO será afectado.
+    permanentemente. Los repositorios de GitHub NO serán afectados.
     
   name: delete-lab
-  title: 🗑️ Eliminar Laboratorio
+  title: 🗑️ Eliminar Stack de Laboratorio
   tags:
     - delete
     - cleanup
@@ -26,23 +26,24 @@ spec:
   
   parameters:
     # ========================================
-    # Paso 1: Seleccionar el Componente
+    # Paso 1: Seleccionar el System (Stack)
     # ========================================
-    - title: ⚠️ Seleccionar Laboratorio a Eliminar
+    - title: ⚠️ Seleccionar Stack a Eliminar
       description: |
-        Selecciona el componente que deseas eliminar del catálogo y de ArgoCD.
-        **ADVERTENCIA**: Esta acción eliminará permanentemente los recursos de Kubernetes.
+        Selecciona el **System (Stack de Observabilidad)** que deseas eliminar.
+        **ADVERTENCIA**: Esto eliminará el stack Y TODAS las aplicaciones de estudiantes asociadas.
       required:
-        - componentRef
+        - systemRef
       properties:
-        componentRef:
-          title: Componente a Eliminar
+        systemRef:
+          title: Stack a Eliminar
           type: string
-          description: Selecciona el componente del catálogo que deseas eliminar
+          description: Selecciona el System del catálogo que deseas eliminar junto con todos sus componentes
           ui:field: EntityPicker
           ui:options:
             catalogFilter:
-              kind: Component
+              kind: System
+              spec.stackType: observability-stack
             allowArbitraryValues: false
 
     # ========================================
@@ -50,7 +51,7 @@ spec:
     # ========================================
     - title: 🔐 Confirmación de Eliminación
       description: |
-        Por favor confirma que deseas eliminar este laboratorio.
+        Por favor confirma que deseas eliminar este stack y TODOS sus componentes.
         Esta acción NO se puede deshacer.
       required:
         - confirmDelete
@@ -65,83 +66,61 @@ spec:
   # PASOS DE EJECUCIÓN
   # ========================================
   steps:
-    # Paso 1: Obtener información de la entidad del catálogo
-    - id: fetch-entity
-      name: Obtener Información del Componente
+    # --------------------------------------------------
+    # FASE 1: Recopilar información del System y sus componentes
+    # --------------------------------------------------
+
+    # Paso 1: Obtener información del System
+    - id: fetch-system
+      name: Obtener Información del System
       action: catalog:fetch
       input:
-        entityRef: ${{ parameters.componentRef }}
+        entityRef: ${{ parameters.systemRef }}
 
-    # Paso 2: Extraer el nombre de la app de ArgoCD desde las annotations
-    - id: extract-argocd-app-name
-      name: Extraer Nombre de App en ArgoCD
+    # Paso 2: Extraer el nombre del System
+    - id: extract-system-name
+      name: Extraer Nombre del System
       action: roadiehq:utils:jsonata
       input:
         data:
-          entity: ${{ steps['fetch-entity'].output.entity }}
+          entity: ${{ steps['fetch-system'].output.entity }}
         expression: >
-          entity.metadata.annotations.`argocd/app-name`
-            ? entity.metadata.annotations.`argocd/app-name`
-            : entity.metadata.name
+          entity.metadata.name
 
-    # Paso 3: Extraer el UID de la entidad para desregistrarla
-    - id: extract-entity-uid
-      name: Extraer UID de la Entidad
-      action: roadiehq:utils:jsonata
-      input:
-        data:
-          entity: ${{ steps['fetch-entity'].output.entity }}
-        expression: >
-          entity.metadata.uid
-
-    # Paso 4: Extraer la Location que gestiona esta entidad
-    - id: extract-location-ref
-      name: Extraer Location de Origen
-      action: roadiehq:utils:jsonata
-      input:
-        data:
-          entity: ${{ steps['fetch-entity'].output.entity }}
-        expression: >
-          entity.metadata.annotations.`backstage.io/managed-by-location`
-
-    # Paso 5: Log de información antes de eliminar
-    - id: log-info
-      name: Verificar Información de Eliminación
-      action: debug:log
-      input:
-        message: |
-          Procediendo a eliminar:
-          - ArgoCD App: ${{ steps['extract-argocd-app-name'].output.result }}
-          - Backstage Entity UID: ${{ steps['extract-entity-uid'].output.result }}
-          - Managed by Location: ${{ steps['extract-location-ref'].output.result }}
-          - Component Ref: ${{ parameters.componentRef }}
-        listWorkspace: false
-
-    # Paso 5: Eliminar la aplicación de ArgoCD
-    # Esto también elimina todos los recursos de Kubernetes gestionados (cascade)
-    - id: delete-argocd-app
-      name: Eliminar Aplicación de ArgoCD
+    # Paso 3: Consultar todos los componentes que pertenecen a este System
+    - id: fetch-child-components
+      name: Buscar Componentes del System
       action: http:backstage:request
       input:
-        method: DELETE
-        path: /argocd/argoInstance/in-cluster/applications/${{ steps['extract-argocd-app-name'].output.result }}
+        method: GET
+        path: /catalog/entities?filter=kind=component,spec.system=system:default/${{ steps['extract-system-name'].output.result }}
         logRequestPath: true
         continueOnBadResponse: true
 
-    # Paso 6: Log del resultado de eliminación de ArgoCD
-    - id: log-argocd-result
-      name: Verificar Resultado de ArgoCD
-      action: debug:log
+    # Paso 4: Extraer datos de los componentes hijos para los loops
+    - id: extract-components-data
+      name: Extraer Datos de Componentes
+      action: roadiehq:utils:jsonata
       input:
-        message: |
-          Resultado de eliminación en ArgoCD:
-          - Status Code: ${{ steps['delete-argocd-app'].output.code }}
-          - Body: ${{ steps['delete-argocd-app'].output.body }}
-        listWorkspace: false
+        data:
+          components: ${{ steps['fetch-child-components'].output.body }}
+        expression: |
+          (
+            $map(components, function($comp) {
+              {
+                "name": $comp.metadata.name,
+                "uid": $comp.metadata.uid,
+                "argoAppName": $lookup($comp.metadata.annotations, "argocd/app-name") 
+                  ? $lookup($comp.metadata.annotations, "argocd/app-name") 
+                  : $comp.metadata.name,
+                "locationRef": $lookup($comp.metadata.annotations, "backstage.io/managed-by-location")
+              }
+            })
+          )
 
-    # Paso 7: Buscar la Location en el catálogo para obtener su ID
-    - id: find-location
-      name: Buscar Location en el Catálogo
+    # Paso 5: Obtener todas las Locations del catálogo
+    - id: fetch-all-locations
+      name: Obtener Locations del Catálogo
       action: http:backstage:request
       input:
         method: GET
@@ -149,63 +128,155 @@ spec:
         logRequestPath: true
         continueOnBadResponse: true
 
-    # Paso 8: Extraer el ID de la Location que coincide con esta entidad
-    - id: extract-location-id
-      name: Extraer ID de la Location
+    # Paso 6: Extraer Location IDs para los componentes hijos
+    - id: extract-component-location-ids
+      name: Extraer Location IDs de Componentes
       action: roadiehq:utils:jsonata
       input:
         data:
-          locations: ${{ steps['find-location'].output.body }}
-          locationRef: ${{ steps['extract-location-ref'].output.result }}
-        expression: >
+          components: ${{ steps['extract-components-data'].output.result }}
+          locations: ${{ steps['fetch-all-locations'].output.body }}
+        expression: |
           (
-            $target := $substringAfter(locationRef, "url:");
+            $map(components, function($comp) {
+              $target := $substringAfter($comp.locationRef, "url:");
+              $match := $filter(locations, function($loc) {
+                $loc.data.target = $target
+              });
+              {
+                "name": $comp.name,
+                "uid": $comp.uid,
+                "argoAppName": $comp.argoAppName,
+                "locationId": $count($match) > 0 ? $match[0].data.id : null
+              }
+            })
+          )
+
+    # Paso 7: Extraer datos del System entity (UID, location, argocd app)
+    - id: extract-system-data
+      name: Extraer Datos del System
+      action: roadiehq:utils:jsonata
+      input:
+        data:
+          entity: ${{ steps['fetch-system'].output.entity }}
+          locations: ${{ steps['fetch-all-locations'].output.body }}
+        expression: |
+          (
+            $locationRef := entity.metadata.annotations.`backstage.io/managed-by-location`;
+            $target := $substringAfter($locationRef, "url:");
             $match := $filter(locations, function($loc) {
               $loc.data.target = $target
             });
-            $count($match) > 0 ? $match[0].data.id : null
+            {
+              "name": entity.metadata.name,
+              "uid": entity.metadata.uid,
+              "argoAppName": entity.metadata.annotations.`argocd/app-name`
+                ? entity.metadata.annotations.`argocd/app-name`
+                : entity.metadata.name,
+              "locationRef": $locationRef,
+              "locationId": $count($match) > 0 ? $match[0].data.id : null
+            }
           )
 
-    # Paso 9: Log de la Location encontrada
-    - id: log-location
-      name: Verificar Location Encontrada
+    # Paso 8: Log de información antes de eliminar
+    - id: log-info
+      name: Verificar Información de Eliminación
       action: debug:log
       input:
         message: |
-          Location encontrada:
-          - Location Ref: ${{ steps['extract-location-ref'].output.result }}
-          - Location ID: ${{ steps['extract-location-id'].output.result }}
+          === ELIMINACIÓN DE STACK ===
+          System: ${{ steps['extract-system-name'].output.result }}
+          System UID: ${{ steps['extract-system-data'].output.result.uid }}
+          System ArgoCD App: ${{ steps['extract-system-data'].output.result.argoAppName }}
+          System Location ID: ${{ steps['extract-system-data'].output.result.locationId }}
+          Componentes encontrados: ${{ steps['extract-component-location-ids'].output.result }}
         listWorkspace: false
 
-    # Paso 10: Eliminar la Location del catálogo (esto evita que Backstage re-descubra la entidad)
-    - id: delete-location
-      name: Eliminar Location del Catálogo
+    # --------------------------------------------------
+    # FASE 2: Eliminar aplicaciones de ArgoCD (componentes hijos)
+    # --------------------------------------------------
+    - id: delete-child-argocd-apps
+      name: Eliminar Apps de ArgoCD (Componentes)
+      each: ${{ steps['extract-component-location-ids'].output.result }}
       action: http:backstage:request
       input:
         method: DELETE
-        path: /catalog/locations/${{ steps['extract-location-id'].output.result }}
+        path: /argocd/argoInstance/in-cluster/applications/${{ each.value.argoAppName }}
         logRequestPath: true
         continueOnBadResponse: true
 
-    # Paso 11: Desregistrar la entidad del catálogo de Backstage
-    - id: unregister-entity
-      name: Desregistrar Entidad del Catálogo
+    # --------------------------------------------------
+    # FASE 3: Eliminar la app de ArgoCD del System
+    # --------------------------------------------------
+    - id: delete-system-argocd-app
+      name: Eliminar App de ArgoCD (System)
       action: http:backstage:request
       input:
         method: DELETE
-        path: /catalog/entities/by-uid/${{ steps['extract-entity-uid'].output.result }}
+        path: /argocd/argoInstance/in-cluster/applications/${{ steps['extract-system-data'].output.result.argoAppName }}
         logRequestPath: true
         continueOnBadResponse: true
 
-    # Paso 12: Log del resultado de desregistro
-    - id: log-unregister-result
-      name: Verificar Resultado de Desregistro
+    # --------------------------------------------------
+    # FASE 4: Eliminar Locations de los componentes hijos
+    # --------------------------------------------------
+    - id: delete-child-locations
+      name: Eliminar Locations (Componentes)
+      each: ${{ steps['extract-component-location-ids'].output.result }}
+      action: http:backstage:request
+      input:
+        method: DELETE
+        path: /catalog/locations/${{ each.value.locationId }}
+        logRequestPath: true
+        continueOnBadResponse: true
+
+    # --------------------------------------------------
+    # FASE 5: Eliminar entidades de los componentes hijos
+    # --------------------------------------------------
+    - id: delete-child-entities
+      name: Desregistrar Entidades (Componentes)
+      each: ${{ steps['extract-component-location-ids'].output.result }}
+      action: http:backstage:request
+      input:
+        method: DELETE
+        path: /catalog/entities/by-uid/${{ each.value.uid }}
+        logRequestPath: true
+        continueOnBadResponse: true
+
+    # --------------------------------------------------
+    # FASE 6: Eliminar Location del System
+    # --------------------------------------------------
+    - id: delete-system-location
+      name: Eliminar Location (System)
+      action: http:backstage:request
+      input:
+        method: DELETE
+        path: /catalog/locations/${{ steps['extract-system-data'].output.result.locationId }}
+        logRequestPath: true
+        continueOnBadResponse: true
+
+    # --------------------------------------------------
+    # FASE 7: Eliminar entidad del System
+    # --------------------------------------------------
+    - id: delete-system-entity
+      name: Desregistrar Entidad (System)
+      action: http:backstage:request
+      input:
+        method: DELETE
+        path: /catalog/entities/by-uid/${{ steps['extract-system-data'].output.result.uid }}
+        logRequestPath: true
+        continueOnBadResponse: true
+
+    # Paso final: Log de resultados
+    - id: log-final
+      name: Verificar Resultados Finales
       action: debug:log
       input:
         message: |
-          Resultado de desregistro en Backstage:
-          - Location Delete Status: ${{ steps['delete-location'].output.code }}
-          - Entity Delete Status: ${{ steps['unregister-entity'].output.code }}
+          === RESULTADOS DE ELIMINACIÓN ===
+          System ArgoCD Delete: ${{ steps['delete-system-argocd-app'].output.code }}
+          System Location Delete: ${{ steps['delete-system-location'].output.code }}
+          System Entity Delete: ${{ steps['delete-system-entity'].output.code }}
         listWorkspace: false
 
   # ========================================
@@ -213,14 +284,14 @@ spec:
   # ========================================
   output:
     text:
-      - title: 🗑️ Laboratorio Eliminado
+      - title: 🗑️ Stack de Laboratorio Eliminado
         content: |
-          El laboratorio **${{ steps['extract-argocd-app-name'].output.result }}** ha sido procesado para eliminación.
+          El stack **${{ steps['extract-system-name'].output.result }}** y todos sus componentes han sido procesados para eliminación.
           
-          **Resultados:**
-          - ArgoCD: Status ${{ steps['delete-argocd-app'].output.code }}
-          - Location: Status ${{ steps['delete-location'].output.code }}
-          - Entity: Status ${{ steps['unregister-entity'].output.code }}
+          **Resultados del System:**
+          - ArgoCD: Status ${{ steps['delete-system-argocd-app'].output.code }}
+          - Location: Status ${{ steps['delete-system-location'].output.code }}
+          - Entity: Status ${{ steps['delete-system-entity'].output.code }}
           
           **Nota:** Los recursos de Kubernetes pueden tardar unos minutos en eliminarse completamente.
-          El repositorio de GitHub NO fue modificado.
+          Los repositorios de GitHub NO fueron modificados.
