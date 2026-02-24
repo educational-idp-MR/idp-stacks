@@ -2,26 +2,26 @@
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
-  name: ${{values.name | dump}}
-  description: ${{values.description | dump}}
+  name: "test-5"
+  description: "test"
   annotations:
     # Documentación técnica en Backstage
     backstage.io/techdocs-ref: dir:.
     
     # Si tu laboratorio despliega en Kubernetes, descomenta:
-    # backstage.io/kubernetes-label-selector: 'entity-id=${{values.name}}'
-    # backstage.io/kubernetes-namespace: ${{values.name}}
+    # backstage.io/kubernetes-label-selector: 'entity-id=test-5'
+    # backstage.io/kubernetes-namespace: test-5
     
     # Si usa ArgoCD, descomenta:
-    # argocd/app-name: ${{values.name | dump}}
+    # argocd/app-name: "test-5"
   
   links:
-    - url: https://github.com/${{"${{values.githubOrg}}"}}/${{"${{values.githubRepoName}}"}}
+    - url: https://github.com/${{values.githubOrg}}/${{values.githubRepoName}}
       title: Repositorio GitHub
       icon: github
     
     # Si tu laboratorio despliega una aplicación, descomenta y personaliza:
-    # - url: https://${{values.name}}.${{values.domain}}
+    # - url: https://test-5.eci-idp.click
     #   title: Aplicación Desplegada
     #   icon: dashboard
 
