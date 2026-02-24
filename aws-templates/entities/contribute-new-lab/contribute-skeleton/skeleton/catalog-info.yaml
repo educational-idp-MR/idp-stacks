@@ -28,7 +28,7 @@ metadata:
   tags:
     - laboratory
     - student-project
-    - ${{values.labDifficulty}}
+    - ${{ ${{values.labDifficulty}} }}
 
 spec:
   type: service
