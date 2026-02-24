@@ -141,7 +141,7 @@ spec:
           description: ${{ '${{parameters.description}}' }}
           {%- if values.parentSystem %}
           parentSystem: ${{ '${{parameters.parentSystem}}' }}
-          cleanParentSystem: ${{ steps['extract-parent-name'].output.result }}
+          cleanParentSystem: ${{ "${{ steps['extract-parent-name'].output.result }}" }}
           {%- endif %}
           githubOrg: ${{ '${{parameters.repoUrl | parseRepoUrl.owner}}' }}
           githubRepoName: ${{ '${{parameters.repoUrl | parseRepoUrl.repo}}' }}
@@ -162,7 +162,7 @@ spec:
         gitCommitMessage: ${{ '"Initial commit: ${{parameters.name}}"' }}
         repoVisibility: public
         protectDefaultBranch: false
-        collaborators: ${{ steps['process-collaborators'].output.result }}
+        collaborators: ${{ "${{ steps['process-collaborators'].output.result }}" }}
     
     # Paso 5: Esperar a que el repositorio esté listo
     - id: sleep
@@ -176,7 +176,7 @@ spec:
       name: Registrar en Backstage Catalog
       action: catalog:register
       input:
-        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        repoContentsUrl: ${{ "${{ steps['publish'].output.repoContentsUrl }}" }}
         catalogInfoPath: '/catalog-info.yaml'
 
   # ========================================
@@ -188,7 +188,7 @@ spec:
         url: ${{ 'https://backstage.${{parameters.domain}}/catalog/default/component/${{parameters.name}}' }}
       
       - title: Repositorio en GitHub
-        url: ${{ steps['publish'].output.remoteUrl }}
+        url: ${{ "${{ steps['publish'].output.remoteUrl }}" }}
       
       - title: Documentación
-        url: ${{ steps['publish'].output.remoteUrl }}/blob/main/README.md
+        url: ${{ "${{ steps['publish'].output.remoteUrl }}" }}/blob/main/README.md
