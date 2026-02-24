@@ -28,14 +28,9 @@ metadata:
   tags:
     - laboratory
     - student-project
-    - ${{ ${{values.labDifficulty}} }}
+    - ${{ "${{values.labDifficulty}}" }}
 
 spec:
   type: service
   lifecycle: experimental
   owner: students
-  
-  # Sistema padre (si el laboratorio lo define)
-  {%- if values.parentSystem %}
-  system: ${{values.parentSystem | dump}}
-  {%- endif %}
