@@ -16,7 +16,7 @@ metadata:
     # argocd/app-name: "test-5"
   
   links:
-    - url: https://github.com/educational-idp-MR/
+    - url: https://github.com/${{values.githubOrg}}/${{values.githubRepoName}}
       title: Repositorio GitHub
       icon: github
     
@@ -28,7 +28,6 @@ metadata:
   tags:
     - laboratory
     - student-project
-    - ${{values.labDifficulty}}
 
 spec:
   type: service
