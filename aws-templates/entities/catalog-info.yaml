@@ -9,7 +9,6 @@ spec:
     - ./java-monitoring-lab/template.yaml
     - ./contribute-new-lab/template.yaml
     - ./delete-lab/template.yaml
-    - ./test-5/template.yaml
 ---
 apiVersion: backstage.io/v1alpha1
 kind: Location

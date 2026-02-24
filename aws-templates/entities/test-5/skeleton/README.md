@@ -1,1 +1,0 @@
-# Laboratorio (Documentación del docente)

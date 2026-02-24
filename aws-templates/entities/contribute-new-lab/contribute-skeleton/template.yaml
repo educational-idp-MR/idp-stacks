@@ -141,6 +141,3 @@ spec:
       
       - title: Repositorio en GitHub
         url: ${{ "${{ steps['publish'].output.remoteUrl }}" }}
-      
-      - title: Documentación
-        url: ${{ "${{ steps['publish'].output.remoteUrl }}" }}/blob/main/README.md

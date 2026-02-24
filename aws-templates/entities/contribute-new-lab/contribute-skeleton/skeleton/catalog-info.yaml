@@ -15,11 +15,7 @@ metadata:
     # Si usa ArgoCD, descomenta:
     # argocd/app-name: ${{values.name | dump}}
   
-  links:
-    - url: https://github.com/${{"${{values.githubOrg}}"}}/${{"${{values.githubRepoName}}"}}
-      title: Repositorio GitHub
-      icon: github
-    
+  #links: 
     # Si tu laboratorio despliega una aplicación, descomenta y personaliza:
     # - url: https://${{values.name}}.${{values.domain}}
     #   title: Aplicación Desplegada
