@@ -1,122 +1,59 @@
-# 🏗️ Entendiendo la Estructura del Laboratorio
+# Estructura del Laboratorio
 
-## 📊 Vista General
+## Vista General
 
-Este laboratorio tiene una estructura de **DOS NIVELES** que puede parecer confusa al principio. Esta guía te ayudará a entender cada parte.
+Cada laboratorio tiene una estructura de **dos niveles**. Entender esta separación es clave para contribuir correctamente.
 
-## 🎭 Los Dos Niveles
+## Los Dos Niveles
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│  NIVEL 1: PROFESOR (este directorio)                        │
-│  → Lo que TÚ desarrollas y mantienes                        │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  📄 template.yaml         ← Define el formulario para       │
-│                              estudiantes                     │
-│  📄 README.md             ← Documentación del laboratorio   │
-│  📄 PROFESSOR_GUIDE.md    ← Guía para crear contenido       │
-│  📄 CONTRIBUTING.md       ← Cómo contribuir                  │
-│  📄 catalog-info.yaml     ← Metadata en Backstage           │
-│  📁 docs/                 ← Documentación pedagógica        │
-│                                                              │
-│  ┌───────────────────────────────────────────────────────┐ │
-│  │ NIVEL 2: ESTUDIANTE (directorio skeleton/)            │ │
-│  │ → Lo que RECIBEN los estudiantes cuando usan el       │ │
-│  │   template                                             │ │
-│  ├───────────────────────────────────────────────────────┤ │
-│  │                                                        │ │
-│  │ 📁 skeleton/                                           │ │
-│  │   ├── 📄 README.md         ← Lo primero que ven       │ │
-│  │   ├── 📄 catalog-info.yaml ← Metadata de su proyecto  │ │
-│  │   ├── 📄 .gitignore                                   │ │
-│  │   ├── 📄 mkdocs.yml        ← Config de documentación  │ │
-│  │   ├── 📁 docs/             ← Docs del proyecto        │ │
-│  │   └── 📁 [tu-código]       ← Código del laboratorio   │ │
-│  │                                                        │ │
-│  └────────────────────────────────────────────────────────┘ │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
-```
+**Nivel 1 — Profesor (raíz del laboratorio):** es lo que tú desarrollas y mantienes. Aquí van los archivos que definen y documentan el laboratorio, pero que el estudiante **nunca** recibe directamente.
 
-## 🔄 Flujo Completo
+- `template.yaml` — Define el formulario que el estudiante completa en Backstage.
+- `README.md` — Documentación del laboratorio para el catálogo.
+- `catalog-info.yaml` — Metadata para Backstage.
+- `docs/` — Documentación pedagógica adicional.
 
-### Paso 1: Profesor Desarrolla
+**Nivel 2 — Estudiante (directorio `skeleton/`):** es lo que los estudiantes **reciben** cuando usan el template. Todo lo que pongas dentro de `skeleton/` se copia tal cual al nuevo repositorio del estudiante.
 
-```
-Profesor trabaja en: aws-templates/entities/mi-nuevo-lab/
-│
-├── Edita template.yaml    → Define qué preguntarle al estudiante
-├── Edita README.md        → Documenta el laboratorio
-├── Desarrolla skeleton/   → Crea el código/contenido
-    │
-    ├── skeleton/README.md           → Instrucciones para el estudiante
-    ├── skeleton/src/app.py          → Código que modificarán
-    ├── skeleton/config/settings.yml → Configuración
-    └── skeleton/...                 → Más archivos
-```
+- `skeleton/README.md` — Lo primero que ve el estudiante.
+- `skeleton/catalog-info.yaml` — Metadata de su proyecto.
+- `skeleton/.gitignore` — Archivos a ignorar en Git.
+- `skeleton/mkdocs.yml` — Configuración de documentación.
+- `skeleton/docs/` — Docs del proyecto.
+- `skeleton/[tu-código]/` — Código y recursos del laboratorio.
 
-### Paso 2: Laboratorio se Publica
+> **Regla simple:** si el estudiante necesita el archivo en su proyecto, va en `skeleton/`. Si no, va en la raíz.
 
-```
-PR se aprueba → Merge a main → Lab en Backstage
+## Ejemplo: Laboratorio de Docker
 
-Aparece en el catálogo como:
-"🎓 Mi Nuevo Laboratorio" (el template.yaml)
-```
-
-### Paso 3: Estudiante Usa el Template
-
-```
-Estudiante en Backstage:
-│
-├── Ve "🎓 Mi Nuevo Laboratorio"
-├── Click en "Choose"
-├── Completa formulario (definido en template.yaml)
-├── Click en "Create"
-│
-└→ Se crea NUEVO repositorio con contenido de skeleton/
-    │
-    ├── README.md            ← De skeleton/README.md
-    ├── catalog-info.yaml    ← De skeleton/catalog-info.yaml
-    ├── src/app.py           ← De skeleton/src/app.py
-    └── ...                  ← Todo lo que estaba en skeleton/
-```
-
-## 📝 Ejemplo Práctico
-
-### Ejemplo: Laboratorio de Docker
-
-#### Nivel Profesor (lo que desarrollas):
+Supongamos que creas un lab llamado `docker-basics-lab`. La estructura de este proyecto en el repositorio de idp-stacks se vería así:
 
 ```
 docker-basics-lab/
-├── template.yaml              ← "¿Nombre del proyecto? ¿Qué lenguaje?"
-├── README.md                  ← "Este lab enseña Docker básico"
-├── skeleton/                  ← ⬇️ Lo que recibe el estudiante ⬇️
-    ├── README.md              ← "Bienvenido a tu proyecto Docker"
-    ├── Dockerfile             ← Dockerfile pre-configurado
-    ├── app.py                 ← Aplicación Python de ejemplo
-    └── docker-compose.yml     ← Compose file
+├── template.yaml              ← Formulario: nombre del proyecto, lenguaje, etc.
+├── README.md                  ← Descripción del lab para el catálogo
+├── skeleton/                  ← Lo que recibe el estudiante
+    ├── README.md              ← Instrucciones del proyecto
+    ├── Dockerfile
+    ├── app.py
+    └── docker-compose.yml
 ```
 
-#### Nivel Estudiante (lo que reciben):
-
-Cuando Juan usa el template y pone "juan-docker-project":
+Cuando un estudiante usa el template, se crea un repositorio nuevo con el contenido de `skeleton/`:
 
 ```
-juan-docker-project/           ← Repositorio nuevo
-├── README.md                  ← Copiado de skeleton/README.md
-├── Dockerfile                 ← Copiado de skeleton/Dockerfile
-├── app.py                     ← Copiado de skeleton/app.py
-└── docker-compose.yml         ← Copiado de skeleton/docker-compose.yml
+juan-docker-project/
+├── README.md
+├── Dockerfile
+├── app.py
+└── docker-compose.yml
 ```
 
-## 🎯 Qué Editar Como Profesor
+## Qué editar
 
-### 1. `template.yaml` (Raíz)
+### `template.yaml`
 
-**Propósito**: Define el formulario para estudiantes
+Define el formulario que el estudiante completa en Backstage. Editalo cuando necesites agregar o cambiar los datos que se le piden al estudiante.
 
 ```yaml
 parameters:
@@ -125,126 +62,35 @@ parameters:
       name:
         type: string
         title: Nombre del Proyecto
-      # Agrega más campos según necesites
 ```
 
-**Cuándo editar**: Cuando necesites preguntar algo al estudiante
+### `skeleton/`
 
-### 2. `skeleton/` (Subdirectorio)
+Todo lo que pongas aquí termina en el repositorio del estudiante: código base, configuración, tests, scripts, documentación.
 
-**Propósito**: Todo lo que los estudiantes recibirán
+### `README.md` (raíz)
 
-**Qué poner aquí**:
-- ✅ Código base de la aplicación
-- ✅ Archivos de configuración
-- ✅ Tests de ejemplo
-- ✅ Scripts de utilidad
-- ✅ README con instrucciones para el estudiante
+Documenta el laboratorio para el catálogo de Backstage: descripción, objetivos, prerrequisitos, ejercicios.
 
-**Estructura recomendada dentro de skeleton/**:
-```
-skeleton/
-├── README.md              ← Instrucciones paso a paso
-├── catalog-info.yaml      ← Metadata
-├── src/                   ← Código fuente
-├── tests/                 ← Tests
-├── config/                ← Configuración
-└── docs/                  ← Documentación
-```
+## Variables `${{values.xxx}}`
 
-### 3. `README.md` (Raíz)
+Son placeholders que Backstage reemplaza automáticamente con los valores que el estudiante ingresa en el formulario.
 
-**Propósito**: Documentar el laboratorio para el catálogo
+Por ejemplo, si en `skeleton/README.md` escribes:
 
-**Incluye**:
-- Descripción del laboratorio
-- Objetivos de aprendizaje
-- Prerrequisitos
-- Guía paso a paso
-- Ejercicios y soluciones
-
-## ❓ Preguntas Frecuentes
-
-### ¿Por qué hay dos README.md?
-
-1. **README.md (raíz)**: Documenta el LABORATORIO (para profesores y el catálogo)
-2. **skeleton/README.md**: Instrucciones para el ESTUDIANTE (lo que ven en su proyecto)
-
-### ¿Dónde pongo el código de la aplicación?
-
-En `skeleton/` y subdirectorios. Todo lo que esté ahí se copiará al proyecto del estudiante.
-
-### ¿Cómo sé si algo va en la raíz o en skeleton/?
-
-Pregúntate: **¿El estudiante necesita este archivo en su proyecto?**
-
-- ✅ SÍ → Va en `skeleton/`
-- ❌ NO → Va en la raíz (es documentación del lab)
-
-### ¿Qué son las variables `${{values.xxx}}`?
-
-Son placeholders que se reemplazan automáticamente:
-
-- En `template.yaml`: Los valores que el estudiante ingresa
-- En `skeleton/*`: Se reemplazan al crear el proyecto
-
-Ejemplo:
 ```markdown
-# skeleton/README.md
 # Proyecto: ${{values.name}}
+```
 
-Cuando el estudiante pone "mi-proyecto", se convierte en:
+Y el estudiante ingresa "mi-proyecto", el archivo resultante tendrá:
+
+```markdown
 # Proyecto: mi-proyecto
 ```
 
-## ✅ Checklist de Desarrollo
+## Workflow de desarrollo
 
-Cuando desarrolles tu laboratorio, asegúrate de:
-
-- [ ] `template.yaml` tiene todos los campos necesarios
-- [ ] `skeleton/README.md` tiene instrucciones claras para estudiantes
-- [ ] `skeleton/` tiene todo el código/archivos necesarios
-- [ ] `README.md` (raíz) documenta bien el laboratorio
-- [ ] Probaste crear un proyecto desde el template
-- [ ] Las variables `${{values.xxx}}` se reemplazan correctamente
-
-## 🚀 Workflow de Desarrollo
-
-1. **Crea el esqueleto básico**:
-   ```bash
-   cd skeleton/
-   # Crea la estructura que recibirá el estudiante
-   mkdir -p src tests config docs
-   ```
-
-2. **Desarrolla el contenido en `skeleton/`**:
-   - Código de la aplicación
-   - Tests de ejemplo
-   - Configuración
-   - Documentación para estudiantes
-
-3. **Configura `template.yaml`**:
-   - Define qué preguntarle al estudiante
-   - Configura los pasos de creación
-
-4. **Documenta en `README.md` (raíz)**:
-   - Explica el laboratorio
-   - Objetivos y ejercicios
-
-5. **Prueba localmente** (si es posible):
-   - Usa el template
-   - Verifica que todo se copia correctamente
-   - Valida las variables
-
-## 💡 Tips
-
-- **Mantén `skeleton/` simple**: No sobrecargues con demasiados archivos
-- **Usa comentarios**: En el código de `skeleton/`, guía al estudiante
-- **README claro**: El `skeleton/README.md` es crítico
-- **Variables estratégicas**: Usa `${{values.xxx}}` para personalización
-
----
-
-**¿Aún confundido?** Revisa el laboratorio de ejemplo: `java-monitoring-lab`
-
-**¿Necesitas ayuda?** Abre un Discussion en GitHub o contacta al equipo
+1. Crea la estructura dentro de `skeleton/` con el código y recursos que recibirá el estudiante.
+2. Configura `template.yaml` con los campos del formulario y los pasos de creación.
+3. Documenta el laboratorio en el `README.md` de la raíz (y en el del skeleton en caso de que sea necesario documentar algo que el estudiante necesita).
+4. Prueba el template si es posible: verifica que los archivos se copian y las variables se reemplazan correctamente.

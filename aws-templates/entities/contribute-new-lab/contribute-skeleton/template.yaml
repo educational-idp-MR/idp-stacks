@@ -12,7 +12,7 @@ metadata:
     - ${{values.difficulty}}
 
 spec:
-  owner: professors
+  owner: ${{values.owner}}
   type: service
   
   parameters:
