@@ -18,7 +18,7 @@ metadata:
     mantener control de calidad y revisión centralizada.
     
   name: contribute-new-lab
-  title: 🤝 Contribuir Nuevo Laboratorio al Catálogo
+  title: Contribuir Nuevo Laboratorio al Catálogo
   tags:
     - contribution
     - laboratory
@@ -30,10 +30,7 @@ spec:
   type: template
   
   parameters:
-    # ========================================
-    # Paso 1: Información del Profesor
-    # ========================================
-    - title: 👨‍🏫 Tu Información
+    - title: Tu Información
       description: Necesitamos saber quién está creando este laboratorio
       required:
         - professorName
@@ -60,10 +57,7 @@ spec:
             Esto te permitirá hacer push directamente a tu branch.
           pattern: '^[a-zA-Z0-9-]+$'
     
-    # ========================================
-    # Paso 2: Información del Laboratorio
-    # ========================================
-    - title: 📚 Información del Laboratorio
+    - title: Información del Laboratorio
       description: Define las características básicas de tu laboratorio
       required:
         - labName
@@ -123,11 +117,11 @@ spec:
             - '3h'
             - '4h+'
           enumNames:
-            - '⚡ 30 minutos'
-            - '🕐 1 hora'
-            - '🕑 2 horas'
-            - '🕒 3 horas'
-            - '🕓 4 o más horas'
+            - '30 minutos'
+            - '1 hora'
+            - '2 horas'
+            - '3 horas'
+            - '4 o más horas'
           default: '2h'
         
         tags:
@@ -167,24 +161,6 @@ spec:
             2. Implementar...
             3. Configurar...
     
-    # ========================================
-    # Paso 3: Sistema Padre (Opcional)
-    # ========================================
-    - title: 🔗 Sistema Padre (Opcional)
-      description: Si tu laboratorio se integra con un stack existente, selecciónalo
-      properties:
-        parentSystem:
-          title: Sistema Padre
-          type: string
-          ui:field: EntityPicker
-          ui:options:
-            catalogFilter:
-              kind: system
-            allowArbitraryValues: false
-
-  # ========================================
-  # PASOS DE EJECUCIÓN
-  # ========================================
   steps:
     # Paso 1: Generar nombre de branch
     - id: generate-branch-name
@@ -231,16 +207,16 @@ spec:
           createdDate: ${{ "" | now }}
           branchName: ${{ steps['generate-branch-name'].output.result }}
     
-    # Paso 5: Publicar en una BRANCH del repositorio idp-stacks
+    # Paso 4: Publicar en una BRANCH del repositorio idp-stacks
     - id: publish-branch
       name: Crear Branch en idp-stacks
       action: publish:github:pull-request
       input:
         repoUrl: github.com?repo=idp-stacks&owner=educational-idp-MR
         branchName: ${{ steps['generate-branch-name'].output.result }}
-        title: '🎓 Nuevo Lab: ${{parameters.title}}'
+        title: 'Nuevo Lab: ${{parameters.title}}'
         description: |
-          ## 📚 Nuevo Laboratorio Propuesto
+          ## Nuevo Laboratorio Propuesto
           
           **Creado por**: @${{parameters.githubUsername}} (${{parameters.professorName}})
           **Email**: ${{parameters.professorEmail}}
@@ -258,7 +234,7 @@ spec:
           
           ---
           
-          ## 📋 Checklist para el Profesor
+          ## Checklist para el Profesor
           
           Antes de marcar este PR como "Ready for Review", asegúrate de:
           
@@ -270,7 +246,7 @@ spec:
           - [ ] Verificar que todos los comandos funcionan
           - [ ] Agregar screenshots/diagramas donde ayuden
           
-          ## 🔍 Checklist para Reviewers (Owners)
+          ## Checklist para Reviewers (Owners)
           
           Al revisar este PR, verificar:
           
@@ -307,10 +283,7 @@ spec:
           The lab is in development. See PR for details.
         # Crea el PR como DRAFT inicialmente
         draft: true
-    
-  # ========================================
-  # SALIDA
-  # ========================================
+
   output:
     links:
       - title: Pull Request (Draft)
@@ -322,7 +295,7 @@ spec:
         icon: code
     
     text:
-      - title: 🎉 ¡Laboratorio Inicializado!
+      - title: ¡Laboratorio Inicializado!
         content: |
           Tu laboratorio **${{parameters.labName}}** está listo para desarrollo.
           
@@ -333,5 +306,3 @@ spec:
           2. Desarrolla el contenido del laboratorio
           3. Marca el PR como "Ready for Review" cuando termines
           4. Una vez aprobado el PR, podras verlo en el catálogo de Backstage
-          
-          ¡Mucho éxito! 🚀
