@@ -67,12 +67,12 @@
    git checkout feature/lab-[tu-nombre]-by-[tu-usuario]
    
    # Navega a tu laboratorio
-   cd aws-templates/entities/[tu-laboratorio]
+   cd eci-templates/entities/[tu-laboratorio]
    ```
    
    **Estructura generada**:
    ```
-   aws-templates/entities/[tu-laboratorio]/
+   eci-templates/entities/[tu-laboratorio]/
    ├── README.md                 # ⚠️ Principal: Contenido del lab
    ├── PROFESSOR_GUIDE.md        # 📖 Guía detallada para crear labs
    ├── CONTRIBUTING.md           # 🤝 Cómo otros pueden contribuir
@@ -120,7 +120,7 @@
 
 1. Haz fork del repositorio
 2. Clona y crea una branch: `git checkout -b feature/lab-mi-nuevo-lab`
-3. Copia el skeleton: `cp -r aws-templates/entities/contribute-new-lab/skeleton aws-templates/entities/mi-nuevo-lab`
+3. Copia el skeleton: `cp -r eci-templates/entities/contribute-new-lab/skeleton eci-templates/entities/mi-nuevo-lab`
 4. Personaliza los archivos (reemplaza variables `${{values.xxx}}`)
 5. Desarrolla tu contenido
 6. Commit y push: `git commit -m "feat: add laboratory" && git push`
@@ -150,7 +150,7 @@ Para agregar nuevos tipos de templates (no laboratorios educativos):
 
 ```bash
 git checkout -b feature/new-template-type
-# Crea tu template en aws-templates/entities/
+# Crea tu template en eci-templates/entities/
 git commit -m "feat: add new template for X"
 git push origin feature/new-template-type
 # Crea PR con descripción detallada
@@ -276,7 +276,7 @@ refactor/[descripcion]                # Refactorización
 ### Estructura de Directorios
 
 ```
-aws-templates/entities/[nombre-lab]/
+eci-templates/entities/[nombre-lab]/
 ├── README.md                  # Obligatorio
 ├── catalog-info.yaml          # Obligatorio
 ├── PROFESSOR_GUIDE.md         # Opcional
@@ -368,7 +368,7 @@ Puedes ver estadísticas de contribuciones:
 git log --author="tu-email@escuelaing.edu.co" --oneline
 
 # Laboratorios por autor
-grep -r "professorName:" aws-templates/entities/*/LAB_METADATA.yaml
+grep -r "professorName:" eci-templates/entities/*/LAB_METADATA.yaml
 
 # Contribuciones por mes
 git log --since="1 month ago" --pretty=format:"%an" | sort | uniq -c

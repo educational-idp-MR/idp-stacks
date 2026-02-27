@@ -292,7 +292,7 @@ spec:
           4. Cuando esté listo, marca este PR como "Ready for Review"
           
           ¿Preguntas? Menciona a los owners en este PR.
-        targetPath: aws-templates/entities/${{parameters.labName}}
+        targetPath: eci-templates/entities/${{parameters.labName}}
         sourcePath: .
         gitCommitMessage: |
           feat: add new lab ${{parameters.labName}}
