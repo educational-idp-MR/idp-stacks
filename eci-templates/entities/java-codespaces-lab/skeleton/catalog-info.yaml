@@ -1,0 +1,31 @@
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: "java-codespaces-lab"
+  description: "Este laboratorio crea un ambiente en codespaces con Java incluido"
+  annotations:
+    # Documentación técnica en Backstage
+    backstage.io/techdocs-ref: dir:.
+    
+    # Si tu laboratorio despliega en Kubernetes, descomenta:
+    # backstage.io/kubernetes-label-selector: 'entity-id=java-codespaces-lab'
+    # backstage.io/kubernetes-namespace: java-codespaces-lab
+    
+    # Si usa ArgoCD, descomenta:
+    # argocd/app-name: "java-codespaces-lab"
+  
+  #links: 
+    # Si tu laboratorio despliega una aplicación, descomenta y personaliza:
+    # - url: https://java-codespaces-lab.eci-idp.click
+    #   title: Aplicación Desplegada
+    #   icon: dashboard
+
+  tags:
+    - laboratory
+    - student-project
+
+spec:
+  type: service
+  lifecycle: experimental
+  owner: students
