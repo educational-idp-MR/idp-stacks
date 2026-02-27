@@ -2,7 +2,7 @@ apiVersion: scaffolder.backstage.io/v1beta3
 kind: Template
 metadata:
   description: |
-    🗑️ TEMPLATE PARA ELIMINAR LABORATORIOS
+    🗑️ TEMPLATE PARA ELIMINAR LABORATORIOS!!!
     
     Este template permite eliminar completamente un stack de observabilidad
     y TODOS los componentes asociados (apps de estudiantes), incluyendo:
