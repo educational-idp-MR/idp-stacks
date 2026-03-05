@@ -5,7 +5,7 @@ metadata:
     Creates a URL Shortener app with Java Spring boot, prometheus and loki integration which connects to an already existing Observability Stack.
     ⭐️ Rate your experience [here](https://forms.office.com/r/uWVGYUwgs0) ⭐️
   name: java-monitoring-lab
-  title: Java Spring boot app with prometheus and loki integration
+  title: Java Spring boot app with prometheus and loki integration.
   tags:
     - laboratory
     - educational
@@ -171,5 +171,6 @@ spec:
     links:
       - title: Go to your App in Backstage
         url: https://backstage.${{parameters.domain}}/catalog/default/component/${{parameters.name}}
-        
+      - title: Repositorio GitHub
+        url: ${{ steps['publish'].output.remoteUrl }}
       
