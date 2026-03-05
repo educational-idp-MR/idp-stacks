@@ -228,7 +228,7 @@ Consejo: Si usaste la interfaz de Grafana para crear el panel, puedes copiar la 
 - [ ] Logs
 - [ ] Otro: _____
 
-**Ajustes aplicados (colores, unidades, etc.):**
+**Otros ajustes aplicados (colores, unidades, etc.) (opcional):**
 ```
 
 
@@ -290,9 +290,6 @@ Ejemplo: url_shortener_urls_created_total
 
 
 ---
-
-### Implementación de la métrica
-
 
 ### Visualización en Grafana
 
